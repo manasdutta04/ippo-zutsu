@@ -1,0 +1,51 @@
+/* Custom styles can be added here if needed beyond Tailwind */
+
+/* Make the root element take full width */
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* Anime-style text glow effect */
+.text-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+}
+
+/* Pixel art style button press effect */
+.btn-primary:active, .btn-secondary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+}
+
+/* Dashboard card hover effects */
+.dashboard-card {
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Animated background for cards */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 5s ease infinite;
+}
+
+
