@@ -2,8 +2,10 @@ import { useState,useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import profileIcon from '../assets/profile-icon.svg';
 import Store from './Store';
+import { useUser, UserButton } from '@civic/auth/react';
 
-function Dashboard({ onLogout }) {
+function Dashboard() {
+  const { user, signOut } = useUser();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isChallengeModalOpen, setIsChallengeModalOpen] = useState(false);
   const [isTeamsModalOpen, setIsTeamsModalOpen] = useState(false);
@@ -40,7 +42,7 @@ function Dashboard({ onLogout }) {
   
   const handleLogout = () => {
     setIsProfileOpen(false);
-    onLogout();
+    signOut();
   };
   
   const handleTeamAction = (action) => {
@@ -194,26 +196,41 @@ const connectWallet = async() => {
       </button>
     )}
 
+
     {/* Profile button */}
     <div className="relative">
       <button 
         className="w-10 h-10 rounded-full bg-purple-700 pixel-border border-2 flex items-center justify-center overflow-hidden"
         onClick={() => setIsProfileOpen(!isProfileOpen)}
       >
-        <img 
-          src={profileIcon} 
-          alt="Profile" 
-          className="w-8 h-8"
-        />
+        {user && user.picture ? (
+          <img 
+            src={user.picture} 
+            alt={user.name || "Profile"} 
+            className="w-8 h-8 rounded-full"
+          />
+        ) : (
+          <img 
+            src={profileIcon} 
+            alt="Profile" 
+            className="w-8 h-8"
+          />
+        )}
       </button>
 
       {isProfileOpen && (
         <motion.div 
-          className="absolute right-0 mt-2 w-48 bg-purple-900 pixel-border rounded-lg shadow-lg py-2 z-10"
+          className="absolute right-0 mt-2 w-64 bg-purple-900 pixel-border rounded-lg shadow-lg py-2 z-10"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
         >
+          {user && (
+            <div className="px-4 py-2 border-b border-purple-800">
+              <p className="text-white font-medium">{user.name || "User"}</p>
+              {user.email && <p className="text-purple-300 text-sm">{user.email}</p>}
+            </div>
+          )}
           <button 
             className="w-full text-left block px-4 py-2 text-white hover:bg-purple-800"
             onClick={handleLogout}

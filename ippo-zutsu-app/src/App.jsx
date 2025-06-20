@@ -1,24 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import runnerImage from './assets/runner.svg'
 import Dashboard from './components/Dashboard'
+import { CivicAuthProvider, useUser, UserButton } from "@civic/auth/react"
 import './App.css'
 
-function App() {
+function AppContent() {
+  const { user } = useUser();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const handleLogin = () => {
-    setIsLoginOpen(false);
-    setIsLoggedIn(true);
-  };
-  
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
-
-  if (isLoggedIn) {
-    return <Dashboard onLogout={handleLogout} />;
+  // If user is authenticated, show Dashboard
+  if (user) {
+    return <Dashboard />;
   }
 
   return (
@@ -26,18 +19,7 @@ function App() {
       <header className="absolute top-0 left-0 w-full flex justify-between items-center p-4 md:p-6">
         <h1 className="text-xl md:text-2xl font-anime text-white tracking-wider">IPPO-ZUTSU</h1>
         <div className="flex gap-2">
-          <button 
-            className="btn-primary text-xs md:text-sm"
-            onClick={() => setIsLoginOpen(true)}
-          >
-            Login
-          </button>
-          <button 
-            className="btn-secondary text-xs md:text-sm"
-            onClick={() => setIsLoginOpen(true)}
-          >
-            Sign Up
-          </button>
+          <UserButton />
         </div>
       </header>
       
@@ -55,12 +37,7 @@ function App() {
             Turn your real-world movement into in-game adventure. 
             Walk, jog, or exercise to level up your character and defeat bosses!
           </p>
-          <button 
-            className="btn-primary text-sm md:text-base"
-            onClick={() => setIsLoginOpen(true)}
-          >
-            Start Your Adventure
-          </button>
+          <UserButton className="btn-primary text-sm md:text-base" />
         </motion.div>
 
         <motion.div 
@@ -77,58 +54,15 @@ function App() {
           />
         </motion.div>
       </main>
-
-      {isLoginOpen && (
-        <motion.div 
-          className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsLoginOpen(false);
-          }}
-        >
-          <motion.div 
-            className="bg-purple-900 p-6 rounded-xl pixel-border w-full max-w-md"
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-          >
-            <h2 className="text-xl font-anime text-white mb-6 text-center">Join the Adventure</h2>
-            <div className="space-y-4">
-              <input 
-                type="email" 
-                placeholder="Email" 
-                className="w-full p-3 bg-purple-800 text-white rounded-lg border-2 border-purple-700 focus:border-game-accent outline-none"
-              />
-              <input 
-                type="password" 
-                placeholder="Password" 
-                className="w-full p-3 bg-purple-800 text-white rounded-lg border-2 border-purple-700 focus:border-game-accent outline-none"
-              />
-              <div className="flex gap-4 mt-6">
-                <button 
-                  className="btn-primary flex-1"
-                  onClick={handleLogin}
-                >
-                  Login
-                </button>
-                <button 
-                  className="btn-secondary flex-1"
-                  onClick={handleLogin}
-                >
-                  Sign Up
-                </button>
-              </div>
-              <button 
-                className="text-purple-300 hover:text-white text-sm block mx-auto mt-4"
-                onClick={() => setIsLoginOpen(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
     </div>
+  )
+}
+
+function App() {
+  return (
+    <CivicAuthProvider clientId="095874a3-aac4-4b3d-a334-77e407083def">
+      <AppContent />
+    </CivicAuthProvider>
   )
 }
 
