@@ -1,14 +1,55 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import profileIcon from '../assets/profile-icon.svg';
+import Store from './Store';
 
 function Dashboard({ onLogout }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isChallengeModalOpen, setIsChallengeModalOpen] = useState(false);
+  const [isTeamsModalOpen, setIsTeamsModalOpen] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [teamOption, setTeamOption] = useState(null); // 'join' or 'create'
+  const [teamCode, setTeamCode] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [activeWalletTab, setActiveWalletTab] = useState('tokens'); // 'tokens' or 'nfts'
+  
+  
+  // Mock wallet data
+  const walletData = {
+    balance: '2,450.75',
+    tokens: [
+      { id: 1, name: 'STEP', amount: '1,250', icon: '👣', value: '$625.00' },
+      { id: 2, name: 'ENERGY', amount: '750', icon: '⚡', value: '$375.00' },
+      { id: 3, name: 'QUEST', amount: '450', icon: '🏆', value: '$225.00' }
+    ],
+    nfts: [
+      { id: 1, name: 'Fire Gloves', rarity: 'Legendary', image: '🧤', boost: '+15% attack' },
+      { id: 2, name: 'Ice Sword', rarity: 'Epic', image: '🗡', boost: '+10% attack' },
+      { id: 3, name: 'Iron Shield', rarity: 'Rare', image: '🛡️', boost: '+5% defense' },
+      { id: 4, name: 'Lucky Charm', rarity: 'Uncommon', image: '🍀', boost: '+2% rewards' }
+    ]
+  };
   
   const handleLogout = () => {
     setIsProfileOpen(false);
     onLogout();
+  };
+  
+  const handleTeamAction = (action) => {
+    if (action === 'join') {
+      alert(`Joining team with code: ${teamCode}`);
+    } else if (action === 'create') {
+      alert(`Creating team: ${teamName}`);
+    }
+    setTeamOption(null);
+    setTeamCode('');
+    setTeamName('');
+    setIsTeamsModalOpen(false);
+  };
+  
+  const handlePurchase = (item) => {
+    alert(`Purchased ${item.name} for ${item.price} coins!`);
   };
   
   // Updated cards data
@@ -33,20 +74,32 @@ function Dashboard({ onLogout }) {
     {
       id: 3,
       title: 'Teams',
-      value: 'Pixel Runners',
+      value: 'Explore Teams',
       icon: '🧑‍🤝‍🧑',
       color: 'from-green-500 to-green-600',
-      increase: '5 members'
+      increase: '5 members',
+      onClick: () => setIsTeamsModalOpen(true)
     },
     {
       id: 4,
-      title: 'Wallet',
-      value: '1,250 coins',
+      title: 'Store',
+      value: 'Buy Gears',
       icon: '👛',
       color: 'from-yellow-500 to-yellow-600',
-      increase: '+85 today'
+      increase: '3 available',
+      onClick: () => setIsStoreOpen(true)
     }
   ];
+
+  // If store is open, show the store component
+  if (isStoreOpen) {
+    return (
+      <Store 
+        onBack={() => setIsStoreOpen(false)} 
+        onOpenWallet={() => setIsWalletModalOpen(true)} 
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
@@ -57,6 +110,16 @@ function Dashboard({ onLogout }) {
         </div>
         
         <div className="flex items-center space-x-3">
+          <button 
+            className="btn-secondary text-xs py-1.5 px-4 flex items-center"
+            onClick={() => setIsWalletModalOpen(true)}
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+            </svg>
+            Wallet
+          </button>
+          
           <button className="btn-primary text-xs py-1.5 px-4 flex items-center">
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
@@ -83,9 +146,6 @@ function Dashboard({ onLogout }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
               >
-                {/* <div className="px-4 py-2 border-b border-purple-700">
-                  <p className="text-white font-semibold">User</p>
-                </div> */}
                 <button 
                   className="w-full text-left block px-4 py-2 text-white hover:bg-purple-800"
                   onClick={handleLogout}
@@ -232,6 +292,250 @@ function Dashboard({ onLogout }) {
                   </div>
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Teams Modal */}
+      <AnimatePresence>
+        {isTeamsModalOpen && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsTeamsModalOpen(false);
+                setTeamOption(null);
+              }
+            }}
+          >
+            <motion.div
+              className="bg-purple-900 p-6 rounded-xl pixel-border w-full max-w-md"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-anime text-white">Team Options</h2>
+                <button 
+                  className="text-white hover:text-purple-300"
+                  onClick={() => {
+                    setIsTeamsModalOpen(false);
+                    setTeamOption(null);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {!teamOption ? (
+                <div className="space-y-4">
+                  <button 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-anime py-4 px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300"
+                    onClick={() => setTeamOption('join')}
+                  >
+                    <span className="text-lg">Join a Team</span>
+                    <div className="text-2xl">🤝</div>
+                  </button>
+                  
+                  <button 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-anime py-4 px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300"
+                    onClick={() => setTeamOption('create')}
+                  >
+                    <span className="text-lg">Create a Team</span>
+                    <div className="text-2xl">✨</div>
+                  </button>
+                </div>
+              ) : teamOption === 'join' ? (
+                <div className="space-y-4">
+                  <h3 className="text-white font-anime text-center mb-4">Enter Team Code</h3>
+                  <input 
+                    type="text" 
+                    value={teamCode}
+                    onChange={(e) => setTeamCode(e.target.value)}
+                    placeholder="Enter team code" 
+                    className="w-full p-3 bg-purple-800 text-white rounded-lg border-2 border-purple-700 focus:border-green-500 outline-none pixel-border"
+                  />
+                  <div className="flex gap-3 mt-6">
+                    <button 
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-anime py-2 px-4 rounded-lg pixel-border"
+                      onClick={() => setTeamOption(null)}
+                    >
+                      Back
+                    </button>
+                    <button 
+                      className="flex-1 bg-green-600 hover:bg-green-500 text-white font-anime py-2 px-4 rounded-lg pixel-border"
+                      onClick={() => handleTeamAction('join')}
+                      disabled={!teamCode.trim()}
+                    >
+                      Join
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <h3 className="text-white font-anime text-center mb-4">Create New Team</h3>
+                  <input 
+                    type="text" 
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    placeholder="Enter team name" 
+                    className="w-full p-3 bg-purple-800 text-white rounded-lg border-2 border-purple-700 focus:border-green-500 outline-none pixel-border"
+                  />
+                  <div className="flex gap-3 mt-6">
+                    <button 
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-anime py-2 px-4 rounded-lg pixel-border"
+                      onClick={() => setTeamOption(null)}
+                    >
+                      Back
+                    </button>
+                    <button 
+                      className="flex-1 bg-green-600 hover:bg-green-500 text-white font-anime py-2 px-4 rounded-lg pixel-border"
+                      onClick={() => handleTeamAction('create')}
+                      disabled={!teamName.trim()}
+                    >
+                      Create
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Wallet Modal */}
+      <AnimatePresence>
+        {isWalletModalOpen && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsWalletModalOpen(false);
+            }}
+          >
+            <motion.div
+              className="bg-purple-900 p-6 rounded-xl pixel-border w-full max-w-4xl"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-anime text-white">Your Wallet</h2>
+                <button 
+                  className="text-white hover:text-purple-300"
+                  onClick={() => setIsWalletModalOpen(false)}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* Wallet Balance */}
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-lg pixel-border mb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white/80 text-sm font-anime">Total Balance</p>
+                    <p className="text-white text-3xl font-bold mt-1">${walletData.balance}</p>
+                  </div>
+                  <div className="text-4xl">💰</div>
+                </div>
+                <div className="mt-4 flex justify-between">
+                  <button className="bg-white/20 hover:bg-white/30 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                    Deposit
+                  </button>
+                  <button className="bg-white/20 hover:bg-white/30 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                    Withdraw
+                  </button>
+                  <button className="bg-white/20 hover:bg-white/30 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                    Send
+                  </button>
+                </div>
+              </div>
+              
+              {/* Tabs */}
+              <div className="flex border-b border-purple-700 mb-6">
+                <button 
+                  className={`py-2 px-6 font-anime text-sm ${activeWalletTab === 'tokens' ? 'text-white border-b-2 border-game-accent' : 'text-purple-300 hover:text-white'}`}
+                  onClick={() => setActiveWalletTab('tokens')}
+                >
+                  Tokens
+                </button>
+                <button 
+                  className={`py-2 px-6 font-anime text-sm ${activeWalletTab === 'nfts' ? 'text-white border-b-2 border-game-accent' : 'text-purple-300 hover:text-white'}`}
+                  onClick={() => setActiveWalletTab('nfts')}
+                >
+                  NFTs
+                </button>
+              </div>
+              
+              {/* Tokens Tab */}
+              {activeWalletTab === 'tokens' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-4 text-purple-300 text-sm font-anime px-4 py-2">
+                    <div>Token</div>
+                    <div>Amount</div>
+                    <div>Value</div>
+                    <div className="text-right">Actions</div>
+                  </div>
+                  
+                  {walletData.tokens.map(token => (
+                    <div 
+                      key={token.id}
+                      className="grid grid-cols-4 items-center bg-purple-800/50 rounded-lg px-4 py-3 hover:bg-purple-800/70 transition-colors"
+                    >
+                      <div className="flex items-center">
+                        <span className="text-2xl mr-3">{token.icon}</span>
+                        <span className="text-white font-semibold">{token.name}</span>
+                      </div>
+                      <div className="text-white">{token.amount}</div>
+                      <div className="text-white">{token.value}</div>
+                      <div className="flex justify-end space-x-2">
+                        <button className="bg-purple-700 hover:bg-purple-600 text-white text-xs py-1 px-2 rounded">
+                          Swap
+                        </button>
+                        <button className="bg-purple-700 hover:bg-purple-600 text-white text-xs py-1 px-2 rounded">
+                          Send
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* NFTs Tab */}
+              {activeWalletTab === 'nfts' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {walletData.nfts.map(nft => (
+                    <div 
+                      key={nft.id}
+                      className="bg-purple-800/50 rounded-lg p-4 hover:bg-purple-800/70 transition-colors pixel-border"
+                    >
+                      <div className="bg-gradient-to-br from-purple-700 to-purple-900 w-full aspect-square rounded-lg flex items-center justify-center mb-3">
+                        <span className="text-5xl">{nft.image}</span>
+                      </div>
+                      <h3 className="text-white font-semibold">{nft.name}</h3>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          nft.rarity === 'Legendary' ? 'bg-yellow-500/20 text-yellow-300' :
+                          nft.rarity === 'Epic' ? 'bg-purple-500/20 text-purple-300' :
+                          nft.rarity === 'Rare' ? 'bg-blue-500/20 text-blue-300' :
+                          'bg-green-500/20 text-green-300'
+                        }`}>
+                          {nft.rarity}
+                        </span>
+                        <span className="text-white/80 text-xs">{nft.boost}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
