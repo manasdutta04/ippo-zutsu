@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import profileIcon from '../assets/profile-icon.svg';
 import Store from './Store';
 import { useUser, UserButton } from '@civic/auth/react';
+import Level1Challenge from './challenges/Level1Challenge';
+import Level2Challenge from './challenges/Level2Challenge';
+import Level3Challenge from './challenges/Level3Challenge';
 
 function Dashboard() {
   const { user, signOut } = useUser();
@@ -17,6 +20,7 @@ function Dashboard() {
   const [activeWalletTab, setActiveWalletTab] = useState('tokens'); // 'tokens' or 'nfts'
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress,setWalletAddress]=useState("");
+  const [activeChallenge, setActiveChallenge] = useState(null); // null, 'level1', 'level2', 'level3'
   
 
   useEffect(()=>{
@@ -157,6 +161,19 @@ const connectWallet = async() => {
         onOpenWallet={() => setIsWalletModalOpen(true)} 
       />
     );
+  }
+
+  // If a challenge is active, show the corresponding challenge component
+  if (activeChallenge === 'level1') {
+    return <Level1Challenge onBack={() => setActiveChallenge(null)} />;
+  }
+  
+  if (activeChallenge === 'level2') {
+    return <Level2Challenge onBack={() => setActiveChallenge(null)} />;
+  }
+  
+  if (activeChallenge === 'level3') {
+    return <Level3Challenge onBack={() => setActiveChallenge(null)} />;
   }
 
   return (
@@ -340,8 +357,8 @@ const connectWallet = async() => {
                 <button 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-anime py-4 px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300"
                   onClick={() => {
-                    alert("Starting Level 1 Challenge!");
                     setIsChallengeModalOpen(false);
+                    setActiveChallenge('level1');
                   }}
                 >
                   <span className="text-lg">Level 1</span>
@@ -354,8 +371,8 @@ const connectWallet = async() => {
                 <button 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-anime py-4 px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300"
                   onClick={() => {
-                    alert("Starting Level 2 Challenge!");
                     setIsChallengeModalOpen(false);
+                    setActiveChallenge('level2');
                   }}
                 >
                   <span className="text-lg">Level 2</span>
@@ -368,8 +385,8 @@ const connectWallet = async() => {
                 <button 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-anime py-4 px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300"
                   onClick={() => {
-                    alert("Starting Level 3 Challenge!");
                     setIsChallengeModalOpen(false);
+                    setActiveChallenge('level3');
                   }}
                 >
                   <span className="text-lg">Level 3</span>
