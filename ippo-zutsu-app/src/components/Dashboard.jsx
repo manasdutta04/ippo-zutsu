@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import profileIcon from '../assets/profile-icon.svg';
 import Store from './Store';
@@ -13,8 +13,15 @@ function Dashboard({ onLogout }) {
   const [teamCode, setTeamCode] = useState('');
   const [teamName, setTeamName] = useState('');
   const [activeWalletTab, setActiveWalletTab] = useState('tokens'); // 'tokens' or 'nfts'
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [walletAddress,setWalletAddress]=useState("");
   
-  
+
+  useEffect(()=>{
+    getConnectedWallet();
+    addWalletListener();
+  })
+
   // Mock wallet data
   const walletData = {
     balance: '2,450.75',
@@ -46,6 +53,55 @@ function Dashboard({ onLogout }) {
     setTeamCode('');
     setTeamName('');
     setIsTeamsModalOpen(false);
+  };
+
+const connectWallet = async() => {
+  if(typeof window!=undefined && typeof window.ethereum!=undefined){
+      try {
+        const accounts=await window.ethereum.request({method:"eth_requestAccounts"});
+        console.log(accounts[0]);
+        setWalletAddress(accounts[0]);
+      } catch (error) {
+        console.error(error.message);
+      }
+    }else{
+        console.log("Please install metamask");
+    }
+    
+    setIsWalletConnected(true);
+  };
+  const getConnectedWallet = async() => {
+    if(typeof window!=undefined && typeof window.ethereum!=undefined){
+        try {
+            const accounts=await window.ethereum.request({method:"eth_accounts"});
+            if(accounts.length>0){
+                console.log(accounts[0]);
+                setWalletAddress(accounts[0]);
+            }else{
+                console.log("Connect to metamask using connect button");
+            }
+        } catch (error) {
+            console.error(error.message);
+        }
+    }else{
+        console.log("Please install metamask");
+    }
+    
+    setIsWalletConnected(true);
+  };
+
+  const addWalletListener = async() => {
+    if(typeof window!=undefined && typeof window.ethereum!=undefined){
+        window.ethereum.on("accountsChanged",(accounts)=>{
+            console.log(accounts[0]);
+            setWalletAddress(accounts[0]);
+        })
+    }else{
+        setWalletAddress("");
+        console.log("Please install metamask");
+    }
+    
+    setIsWalletConnected(true);
   };
   
   const handlePurchase = (item) => {
@@ -105,58 +161,71 @@ function Dashboard({ onLogout }) {
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
       {/* Navbar */}
       <nav className="bg-purple-900/80 backdrop-blur-sm px-4 py-3 flex justify-between items-center border-b border-purple-700 sticky top-0 z-50">
-        <div className="flex items-center">
-          <h1 className="text-xl font-anime text-white mr-4">IPPO ZUTSU</h1>
-        </div>
-        
-        <div className="flex items-center space-x-3">
+  <div className="flex items-center">
+    <h1 className="text-xl font-anime text-white mr-4">IPPO ZUTSU</h1>
+  </div>
+
+  <div className="flex items-center space-x-3">
+    {walletAddress && walletAddress.length > 0 && (
+      <button 
+        className="btn-secondary text-xs py-1.5 px-4 flex items-center"
+        onClick={() => setIsWalletModalOpen(true)}
+      >
+        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+        </svg>
+        Wallet
+      </button>
+    )}
+
+    {walletAddress && walletAddress.length > 0 ? (
+      <div className="bg-black/30 backdrop-blur-sm rounded-full px-4 py-2 border border-purple-500/30">
+        <span className="text-emerald-300 text-sm font-medium">{`Connected ${walletAddress.substring(0,6)}...${walletAddress.substring(38)}`}</span>
+      </div>
+    ) : (
+      <button 
+        className="btn-primary text-xs py-1.5 px-4 flex items-center"
+        onClick={connectWallet}
+      >
+        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+        </svg>
+        Connect Wallet
+      </button>
+    )}
+
+    {/* Profile button */}
+    <div className="relative">
+      <button 
+        className="w-10 h-10 rounded-full bg-purple-700 pixel-border border-2 flex items-center justify-center overflow-hidden"
+        onClick={() => setIsProfileOpen(!isProfileOpen)}
+      >
+        <img 
+          src={profileIcon} 
+          alt="Profile" 
+          className="w-8 h-8"
+        />
+      </button>
+
+      {isProfileOpen && (
+        <motion.div 
+          className="absolute right-0 mt-2 w-48 bg-purple-900 pixel-border rounded-lg shadow-lg py-2 z-10"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+        >
           <button 
-            className="btn-secondary text-xs py-1.5 px-4 flex items-center"
-            onClick={() => setIsWalletModalOpen(true)}
+            className="w-full text-left block px-4 py-2 text-white hover:bg-purple-800"
+            onClick={handleLogout}
           >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-            </svg>
-            Wallet
+            Logout
           </button>
-          
-          <button className="btn-primary text-xs py-1.5 px-4 flex items-center">
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
-            </svg>
-            Connect Wallet
-          </button>
-          
-          <div className="relative">
-            <button 
-              className="w-10 h-10 rounded-full bg-purple-700 pixel-border border-2 flex items-center justify-center overflow-hidden"
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-            >
-              <img 
-                src={profileIcon} 
-                alt="Profile" 
-                className="w-8 h-8"
-              />
-            </button>
-            
-            {isProfileOpen && (
-              <motion.div 
-                className="absolute right-0 mt-2 w-48 bg-purple-900 pixel-border rounded-lg shadow-lg py-2 z-10"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <button 
-                  className="w-full text-left block px-4 py-2 text-white hover:bg-purple-800"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </nav>
+        </motion.div>
+      )}
+    </div>
+  </div>
+</nav>
+
       
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
