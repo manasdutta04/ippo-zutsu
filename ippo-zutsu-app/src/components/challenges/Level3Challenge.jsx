@@ -333,7 +333,7 @@ function Level3Challenge({ onBack }) {
               <ul className="space-y-2">
                 <li className="flex items-center justify-center">
                   <span className="text-lg mr-2">🪙</span>
-                  <span className="text-purple-200">1000 Move Tokens</span>
+                  <span className="text-purple-200">500 Move Tokens</span>
                 </li>
                 
                 <li className="flex items-center justify-center">
@@ -427,7 +427,7 @@ function Level3Challenge({ onBack }) {
           <ul className="space-y-2">
             <li className="flex items-center">
               <span className="text-lg mr-2">🪙</span>
-              <span className="text-purple-200">1000 Move Tokens</span>
+              <span className="text-purple-200">500 Move Tokens</span>
             </li>
             
             <li className="flex items-center">

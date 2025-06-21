@@ -333,12 +333,12 @@ function Level2Challenge({ onBack }) {
               <ul className="space-y-2">
                 <li className="flex items-center justify-center">
                   <span className="text-lg mr-2">🪙</span>
-                  <span className="text-purple-200">500 Move Tokens</span>
+                  <span className="text-purple-200">250 Move Tokens</span>
                 </li>
                 
                 <li className="flex items-center justify-center">
                   <span className="text-lg mr-2">🏆</span>
-                  <span className="text-purple-200">Beginner Badge</span>
+                  <span className="text-purple-200">Intermediate Badge</span>
                 </li>
               </ul>
             </div>
@@ -427,7 +427,7 @@ function Level2Challenge({ onBack }) {
           <ul className="space-y-2">
             <li className="flex items-center">
               <span className="text-lg mr-2">🪙</span>
-              <span className="text-purple-200">500 Move Tokens</span>
+              <span className="text-purple-200">250 Move Tokens</span>
             </li>
             
             <li className="flex items-center">
