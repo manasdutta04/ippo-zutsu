@@ -431,63 +431,63 @@ useEffect(() => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-3 sm:p-4">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4 sm:mb-8">
         <button 
-          className="btn-secondary text-sm py-1.5 px-4 flex items-center"
+          className="btn-secondary text-xs sm:text-sm py-1 px-2 sm:py-1.5 sm:px-4 flex items-center"
           onClick={onBack}
         >
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
           </svg>
           Back
         </button>
-        <h1 className="text-xl font-anime text-white">Level 1 Challenge</h1>
-        <div className="w-20"></div> {/* Placeholder for balance */}
+        <h1 className="text-lg sm:text-xl font-anime text-white">Level 1 Challenge</h1>
+        <div className="w-12 sm:w-20"></div> {/* Placeholder for balance */}
       </div>
 
       {/* Battle Popup */}
       {showBattlePopup && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 p-3 sm:p-4">
           <motion.div 
-            className="bg-purple-900/90 rounded-xl pixel-border p-6 max-w-md w-full"
+            className="bg-purple-900/90 rounded-xl pixel-border p-4 sm:p-6 max-w-md w-full"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", bounce: 0.4 }}
           >
-            <h2 className="text-xl font-anime text-center text-white mb-4">Battle Encounter!</h2>
+            <h2 className="text-lg sm:text-xl font-anime text-center text-white mb-3 sm:mb-4">Battle Encounter!</h2>
             
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
               <div className="w-1/2 flex justify-center">
                 <img 
                   src="/src/assets/avatar-fighting.gif" 
                   alt="Fighting Avatar" 
-                  className="h-32 object-contain"
+                  className="h-50 sm:h-36 object-contain"
                 />
               </div>
               <div className="w-1/2 flex justify-center">
                 <img 
                   src="/src/assets/goblin.gif" 
                   alt="Goblin" 
-                  className="h-32 object-contain"
+                  className="h-50 sm:h-32 object-contain"
                 />
               </div>
             </div>
             
-            <p className="text-center text-purple-200 mb-6">
+            <p className="text-center text-purple-200 mb-4 sm:mb-6 text-sm sm:text-base">
               A wild goblin appears! What will you do?
             </p>
             
-            <div className="flex justify-between gap-4">
+            <div className="flex justify-between gap-3 sm:gap-4">
               <button 
-                className="btn-primary flex-1 py-2"
+                className="btn-primary flex-1 py-2 text-sm sm:text-base"
                 onClick={handleFight}
               >
                 Fight!
               </button>
               <button 
-                className="btn-secondary flex-1 py-2"
+                className="btn-secondary flex-1 py-2 text-sm sm:text-base"
                 onClick={handleSkip}
               >
                 Skip
@@ -499,67 +499,67 @@ useEffect(() => {
 
       {/* Victory Popup */}
       {showVictoryPopup && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 p-3 sm:p-4">
           <motion.div 
-            className="bg-purple-900/90 rounded-xl pixel-border p-6 max-w-md w-full"
+            className="bg-purple-900/90 rounded-xl pixel-border p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", bounce: 0.4 }}
           >
-            <h2 className="text-xl font-anime text-center text-white mb-4">Challenge Complete!</h2>
+            <h2 className="text-lg sm:text-xl font-anime text-center text-white mb-3 sm:mb-4">Challenge Complete!</h2>
             
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-4 sm:mb-6">
               <img 
                 src="/src/assets/avatar-victory.gif" 
                 alt="Victory Avatar" 
-                className="h-40 object-contain"
+                className="h-32 sm:h-40 object-contain"
               />
             </div>
             
-            <div className="bg-purple-800/50 rounded-lg p-4 mb-6">
-              <h3 className="text-white font-anime mb-2 text-center">Rewards:</h3>
+            <div className="bg-purple-800/50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+              <h3 className="text-white font-anime mb-2 text-center text-sm sm:text-base">Rewards:</h3>
               <ul className="space-y-2">
-                <li className="flex items-center justify-center">
-                  <span className="text-lg mr-2">🪙</span>
+                <li className="flex items-center justify-center text-sm sm:text-base">
+                  <span className="text-base sm:text-lg mr-2">🪙</span>
                   <span className="text-purple-200">50 Move Tokens</span>
                   {isClaimingReward ? (
-                    <span className="ml-2 text-yellow-300 text-sm">Claiming...</span>
+                    <span className="ml-2 text-yellow-300 text-xs sm:text-sm">Claiming...</span>
                   ) : (
-                    <span className="ml-2 text-blue-300 text-sm">✓ Assigned</span>
+                    <span className="ml-2 text-blue-300 text-xs sm:text-sm">✓ Assigned</span>
                   )}
                 </li>
                 
-                <li className="flex items-center justify-center">
-                  <span className="text-lg mr-2">🏆</span>
+                <li className="flex items-center justify-center text-sm sm:text-base">
+                  <span className="text-base sm:text-lg mr-2">🏆</span>
                   <span className="text-purple-200">Beginner Badge</span>
                 </li>
               </ul>
               
               <div className="mt-3 text-center">
-                <div className="text-green-300 text-sm">
+                <div className="text-green-300 text-xs sm:text-sm">
                   🎉 Tokens transferred with <strong>ZERO gas fees</strong> for you!
                 </div>
                 <div className="text-green-200 text-xs mt-1">
                   Check your wallet balance - backend paid all network fees
                 </div>
                 {isClaimingReward && (
-                  <div className="text-yellow-300 text-sm mt-2">
+                  <div className="text-yellow-300 text-xs sm:text-sm mt-2">
                     ⏳ Claiming in progress - please confirm the transaction in your wallet!
                   </div>
                 )}
               </div>
             </div>
             
-            <div className="flex justify-center space-x-4">
+            <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
               <button 
-                className={`btn-secondary py-2 px-6 ${isClaimingReward ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`btn-secondary py-2 px-4 sm:px-6 w-full sm:w-auto text-sm sm:text-base ${isClaimingReward ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={() => !isClaimingReward && handleAutoClaim()}
                 disabled={isClaimingReward}
               >
                 {isClaimingReward ? 'Claiming...' : 'Claim Now'}
               </button>
               <button 
-                className="btn-primary py-2 px-6"
+                className="btn-primary py-2 px-4 sm:px-6 w-full sm:w-auto text-sm sm:text-base"
                 onClick={handleContinue}
               >
                 Continue
@@ -571,64 +571,50 @@ useEffect(() => {
 
       {/* Challenge Card */}
       <motion.div 
-        className="bg-purple-900/80 rounded-xl pixel-border p-6 mb-6"
+        className="bg-purple-900/80 rounded-xl pixel-border p-4 sm:p-6 mb-4 sm:mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-anime text-white">Beginner's Path</h2>
-          <div className="bg-purple-800 px-3 py-1 rounded-full text-xs text-yellow-300">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-anime text-white">Beginner's Path</h2>
+          <div className="bg-purple-800 px-2 sm:px-3 py-1 rounded-full text-xs text-yellow-300">
             ★ Easy
           </div>
         </div>
         
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-4 sm:mb-6">
           <img 
             src={isMoving ? "/src/assets/avatar-running.gif" : "/src/assets/avatar-standing.gif"}
             alt={isMoving ? "Running Avatar" : "Standing Avatar"} 
-            className="w-62 h-62 object-contain"
+            className="w-64 h-64 sm:w-80 sm:h-80 object-contain"
           />
         </div>
         
         {/* Permission Error Message */}
         {permissionError && (
-          <div className="bg-red-900/50 text-red-200 p-3 rounded-lg mb-4 text-sm">
+          <div className="bg-red-900/50 text-red-200 p-3 rounded-lg mb-4 text-xs sm:text-sm">
             {permissionError}. Please ensure motion sensors are enabled on your device.
           </div>
         )}
         
         {/* Progress Bar */}
         <div className="mb-4">
-          <div className="flex justify-between text-sm text-purple-200 mb-1">
+          <div className="flex justify-between text-xs sm:text-sm text-purple-200 mb-1">
             <span>{steps} steps</span>
             <span>{targetSteps} steps</span>
           </div>
-          <div className="h-3 bg-purple-800 rounded-full overflow-hidden">
+          <div className="h-2 sm:h-3 bg-purple-800 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-              style={{ width: `${progress}%` }}
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+              style={{ width: `${(steps / targetSteps) * 100}%` }}
             ></div>
           </div>
         </div>
-        
-        {/* Timer */}
-        {/* <div className="flex justify-between items-center mb-6">
-          <div className="text-purple-200">
-            <span className="text-sm">Time Remaining:</span>
-            <span className="ml-2 text-lg font-bold">{formatTime(timeRemaining)}</span>
-          </div>
-          <button 
-            className={`btn-${isRunning ? 'secondary' : 'primary'} text-sm py-1.5 px-4`}
-            onClick={handleStartPause}
-          >
-            {!hasMotionPermission ? 'Enable Motion' : isRunning ? 'Pause' : 'Start'}
-          </button>
-        </div> */}
 
         {/* Start/Pause Button */}
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-4 sm:mb-6">
           <button 
-            className={`btn-${isRunning ? 'secondary' : 'primary'} py-2 px-6`}
+            className={`btn-${isRunning ? 'secondary' : 'primary'} py-2 px-6 sm:px-8 text-sm sm:text-base`}
             onClick={() => setIsRunning(!isRunning)}
           >
             {isRunning ? 'Pause' : 'Start'}
@@ -636,16 +622,16 @@ useEffect(() => {
         </div>
 
         {/* Rewards */}
-        <div className="bg-purple-800/50 rounded-lg p-4">
-          <h3 className="text-white font-anime mb-2">Rewards:</h3>
+        <div className="bg-purple-800/50 rounded-lg p-3 sm:p-4">
+          <h3 className="text-white font-anime mb-2 text-sm sm:text-base">Rewards:</h3>
           <ul className="space-y-2">
-            <li className="flex items-center">
-              <span className="text-lg mr-2">🪙</span>
+            <li className="flex items-center text-sm sm:text-base">
+              <span className="text-base sm:text-lg mr-2">🪙</span>
               <span className="text-purple-200">50 Move Tokens</span>
             </li>
             
-            <li className="flex items-center">
-              <span className="text-lg mr-2">🏆</span>
+            <li className="flex items-center text-sm sm:text-base">
+              <span className="text-base sm:text-lg mr-2">🏆</span>
               <span className="text-purple-200">Beginner Badge</span>
             </li>
           </ul>
@@ -653,19 +639,19 @@ useEffect(() => {
       </motion.div>
 
       {/* Tips Section */}
-      <div className="bg-blue-900/30 rounded-xl pixel-border p-6">
-        <h3 className="text-white font-anime mb-4">Tips for Success</h3>
-        <ul className="space-y-3 text-blue-200">
-          <li className="flex items-start">
-            <span className="text-lg mr-2">💡</span>
+      <div className="bg-blue-900/30 rounded-xl pixel-border p-4 sm:p-6">
+        <h3 className="text-white font-anime mb-3 sm:mb-4 text-sm sm:text-base">Tips for Success</h3>
+        <ul className="space-y-2 sm:space-y-3 text-blue-200">
+          <li className="flex items-start text-xs sm:text-sm">
+            <span className="text-base sm:text-lg mr-2">💡</span>
             <span>Hold your device in your hand or pocket while walking for accurate step counting.</span>
           </li>
-          <li className="flex items-start">
-            <span className="text-lg mr-2">💡</span>
+          <li className="flex items-start text-xs sm:text-sm">
+            <span className="text-base sm:text-lg mr-2">💡</span>
             <span>Take the stairs instead of elevators when possible.</span>
           </li>
-          <li className="flex items-start">
-            <span className="text-lg mr-2">💡</span>
+          <li className="flex items-start text-xs sm:text-sm">
+            <span className="text-base sm:text-lg mr-2">💡</span>
             <span>Park farther away from entrances to add extra steps.</span>
           </li>
         </ul>

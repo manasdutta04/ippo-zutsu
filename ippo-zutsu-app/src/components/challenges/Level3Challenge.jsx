@@ -243,20 +243,20 @@ function Level3Challenge({ onBack }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-3 sm:p-4">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4 sm:mb-8">
         <button 
-          className="btn-secondary text-sm py-1.5 px-4 flex items-center"
+          className="btn-secondary text-xs sm:text-sm py-1 px-2 sm:py-1.5 sm:px-4 flex items-center"
           onClick={onBack}
         >
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
           </svg>
           Back
         </button>
-        <h1 className="text-xl font-anime text-white">Level 3 Challenge</h1>
-        <div className="w-20"></div> {/* Placeholder for balance */}
+        <h1 className="text-lg sm:text-xl font-anime text-white">Level 3 Challenge</h1>
+        <div className="w-12 sm:w-20"></div> {/* Placeholder for balance */}
       </div>
 
       {/* Battle Popup */}
@@ -372,7 +372,7 @@ function Level3Challenge({ onBack }) {
           <img 
             src={isMoving ? "/src/assets/avatar-running.gif" : "/src/assets/avatar-standing.gif"}
             alt={isMoving ? "Running Avatar" : "Standing Avatar"} 
-            className="w-62 h-62 object-contain"
+            className="w-64 h-64 sm:w-80 sm:h-80 object-contain"
           />
         </div>
         
