@@ -324,12 +324,19 @@ useEffect(() => {
         console.log("Reward assigned successfully:", result);
       }
 
-      // Step 2: Claim the reward using user's wallet
+      // Step 2: Double-check pending rewards via backend and claim if available
       if (window.ethereum) {
-        console.log("Claiming reward...");
+        console.log("Checking pending rewards before claiming...");
         setIsClaimingReward(true);
         
         try {
+          // First, check via backend API for additional verification
+          console.log("Checking pending rewards via backend API...");
+          const pendingResponse = await fetch(`http://localhost:3000/pending-rewards/${playerWalletAddress}`);
+          const pendingData = await pendingResponse.json();
+          
+          console.log("Backend pending rewards response:", pendingData);
+
           console.log("Using imported ethers v6");
 
           const provider = new ethers.BrowserProvider(window.ethereum);
@@ -337,8 +344,27 @@ useEffect(() => {
           
           console.log("Provider created, signer obtained");
           
-          // Contract ABI for claimReward function
+          // Contract ABI for both pendingRewards and claimReward functions
           const contractABI = [
+            {
+              "inputs": [
+                {
+                  "internalType": "address",
+                  "name": "",
+                  "type": "address"
+                }
+              ],
+              "name": "pendingRewards",
+              "outputs": [
+                {
+                  "internalType": "uint256",
+                  "name": "",
+                  "type": "uint256"
+                }
+              ],
+              "stateMutability": "view",
+              "type": "function"
+            },
             {
               "inputs": [],
               "name": "claimReward",
@@ -352,17 +378,33 @@ useEffect(() => {
           const contractAddress = "0xa47bad07c591b55c83367a078f73261f17bb1ca6"; // Replace with actual contract address
           const contract = new ethers.Contract(contractAddress, contractABI, signer);
           
-          console.log("Contract created, calling claimReward...");
+          // Check pending rewards directly from contract as well
+          console.log("Checking pending rewards directly from contract for address:", playerWalletAddress);
+          const pendingRewards = await contract.pendingRewards(playerWalletAddress);
+          console.log("Direct contract pending rewards (raw):", pendingRewards.toString());
           
-          const claimTx = await contract.claimReward();
-          console.log("Claim transaction sent:", claimTx.hash);
-          
-          await claimTx.wait();
-          console.log("Reward claimed successfully!");
-          alert("Tokens successfully claimed! Check your wallet balance.");
+          if (pendingRewards > 0) {
+            console.log("Pending rewards found, proceeding to claim...");
+            
+            const claimTx = await contract.claimReward();
+            console.log("Claim transaction sent:", claimTx.hash);
+            
+            await claimTx.wait();
+            console.log("Reward claimed successfully!");
+            alert("Tokens successfully claimed! Check your wallet balance.");
+          } else {
+            console.log("No pending rewards to claim");
+            console.log("Backend says pending rewards:", pendingData.pendingRewards);
+            alert(`No pending rewards found to claim. Backend shows: ${pendingData.pendingRewards || 0} MOVE tokens pending.`);
+          }
         } catch (claimError) {
-          console.error("Error claiming reward:", claimError);
-          alert(`Error claiming reward: ${claimError.message}`);
+          console.error("Error checking/claiming reward:", claimError);
+          
+          if (claimError.message && claimError.message.includes("execution reverted")) {
+            alert("Unable to claim rewards. This usually means you have no pending rewards to claim.");
+          } else {
+            alert(`Error claiming reward: ${claimError.message}`);
+          }
         } finally {
           setIsClaimingReward(false);
         }
