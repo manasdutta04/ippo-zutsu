@@ -70,28 +70,111 @@ app.post("/reward", async (req, res) => {
     const decimals = await contract.decimals();
     const amountInWei = ethers.parseUnits(amount.toString(), decimals);
 
-    // Get the current nonce to ensure transaction uniqueness
-    const nonce = await wallet.getNonce();
-    
-    // Option 1: Direct transfer (user pays no gas)
-    const tx = await contract.transfer(playerAddress, amountInWei, {
-      nonce: nonce
-    });
-    
-    // Option 2: Keep using assignReward (user pays gas to claim)
-    // const tx = await contract.assignReward(playerAddress, amountInWei, {
-    //   nonce: nonce
-    // });
-    
-    console.log(`Transaction sent with nonce ${nonce}: ${tx.hash}`);
-    await tx.wait();
-    
-    console.log(`Transaction confirmed: ${tx.hash}`);
+    console.log(`Processing reward for ${playerAddress}: ${amount} tokens (${amountInWei.toString()} wei)`);
 
-    // Mark transaction as completed
-    recentTransactions.set(txKey, Date.now());
+    // Check backend wallet balances
+    const backendBalance = await contract.balanceOf(wallet.address);
+    const nativeBalance = await provider.getBalance(wallet.address);
     
-    res.json({ success: true, txHash: tx.hash });
+    console.log(`Backend wallet balance: ${ethers.formatUnits(backendBalance, decimals)} tokens`);
+    console.log(`Backend native balance: ${ethers.formatEther(nativeBalance)} ETH`);
+
+    // Check if backend has enough native tokens for gas
+    if (nativeBalance < ethers.parseEther("0.001")) {
+      console.error("❌ Backend wallet has insufficient native tokens for gas fees");
+      // Mark transaction as completed to prevent retries
+      recentTransactions.set(txKey, Date.now());
+      
+      return res.status(500).json({ 
+        error: "Backend wallet needs native tokens for gas fees. Please fund the backend wallet.",
+        code: "INSUFFICIENT_GAS_FUNDS"
+      });
+    }
+
+    // If backend has enough tokens, do direct transfer (NO GAS for user)
+    if (backendBalance >= amountInWei) {
+      console.log("✅ Backend has sufficient balance - doing direct transfer (user pays ZERO gas)");
+      
+      try {
+        const nonce = await wallet.getNonce();
+        const transferTx = await contract.transfer(playerAddress, amountInWei, {
+          nonce: nonce,
+          gasLimit: 100000 // Set explicit gas limit
+        });
+        
+        console.log(`Direct transfer sent with nonce ${nonce}: ${transferTx.hash}`);
+        const transferReceipt = await transferTx.wait();
+        console.log(`✅ Direct transfer confirmed: ${transferTx.hash} (Block: ${transferReceipt.blockNumber})`);
+        
+        // Mark transaction as completed
+        recentTransactions.set(txKey, Date.now());
+        
+        res.json({ 
+          success: true, 
+          txHash: transferTx.hash,
+          blockNumber: transferReceipt.blockNumber,
+          message: "🎉 Tokens transferred directly to your wallet - ZERO gas fees for you!",
+          gasFreeTansfer: true
+        });
+      } catch (transferError) {
+        console.error("❌ Direct transfer failed:", transferError.message);
+        
+        // Fall back to assign/claim method
+        console.log("🔄 Falling back to assign/claim method...");
+        
+        try {
+          const nonce = await wallet.getNonce();
+          const assignTx = await contract.assignReward(playerAddress, amountInWei, {
+            nonce: nonce,
+            gasLimit: 150000
+          });
+          
+          console.log(`Assign transaction sent with nonce ${nonce}: ${assignTx.hash}`);
+          const assignReceipt = await assignTx.wait();
+          console.log(`Assign transaction confirmed: ${assignTx.hash} (Block: ${assignReceipt.blockNumber})`);
+
+          // Mark transaction as completed
+          recentTransactions.set(txKey, Date.now());
+          
+          res.json({ 
+            success: true, 
+            txHash: assignTx.hash,
+            blockNumber: assignReceipt.blockNumber,
+            message: "Reward assigned! You can claim tokens anytime (small one-time gas fee required).",
+            requiresManualClaim: true
+          });
+        } catch (assignError) {
+          console.error("❌ Assign transaction also failed:", assignError.message);
+          throw assignError; // This will be caught by the outer catch block
+        }
+      }
+      
+    } else {
+      // Backend doesn't have enough tokens - use assign/claim method
+      console.log("⚠️ Backend wallet has insufficient token balance - using assign/claim method");
+      
+      const nonce = await wallet.getNonce();
+      
+      const assignTx = await contract.assignReward(playerAddress, amountInWei, {
+        nonce: nonce,
+        gasLimit: 150000
+      });
+      
+      console.log(`Assign transaction sent with nonce ${nonce}: ${assignTx.hash}`);
+      const assignReceipt = await assignTx.wait();
+      console.log(`Assign transaction confirmed: ${assignTx.hash} (Block: ${assignReceipt.blockNumber})`);
+
+      // Mark transaction as completed
+      recentTransactions.set(txKey, Date.now());
+      
+      res.json({ 
+        success: true, 
+        txHash: assignTx.hash,
+        blockNumber: assignReceipt.blockNumber,
+        message: "Reward assigned! You can claim tokens anytime (small one-time gas fee required).",
+        requiresManualClaim: true
+      });
+    }
   } catch (err) {
     console.error("Error assigning reward:", err);
     
@@ -117,7 +200,7 @@ app.post("/reward", async (req, res) => {
     
     if (err.message && err.message.includes("insufficient funds")) {
       return res.status(400).json({ 
-        error: "Insufficient funds in the reward wallet.", 
+        error: "Backend wallet has insufficient native tokens for gas fees. Please contact support.", 
         code: "INSUFFICIENT_FUNDS" 
       });
     }
@@ -126,6 +209,19 @@ app.post("/reward", async (req, res) => {
       return res.status(409).json({ 
         error: "Transaction nonce conflict. Please try again.", 
         code: "NONCE_TOO_LOW" 
+      });
+    }
+
+    if (err.message && err.message.includes("execution reverted")) {
+      console.error("❌ Contract execution reverted. This could mean:");
+      console.error("   - Backend wallet is not the contract owner");
+      console.error("   - Contract doesn't have enough tokens in reward pool");
+      console.error("   - Function call parameters are invalid");
+      
+      return res.status(500).json({ 
+        error: "Contract execution failed. This usually means the backend wallet lacks permissions or the contract needs funding.", 
+        code: "EXECUTION_REVERTED",
+        details: "Please contact support - the backend needs configuration."
       });
     }
     
@@ -167,22 +263,107 @@ app.get("/debug/contract-info", async (req, res) => {
     const name = await contract.name();
     const symbol = await contract.symbol();
     const totalSupply = await contract.totalSupply();
+    const backendBalance = await contract.balanceOf(wallet.address);
+    const nativeBalance = await provider.getBalance(wallet.address);
     
-    console.log("Contract debug info:", { owner, decimals, name, symbol, totalSupply: totalSupply.toString() });
+    const info = { 
+      owner, 
+      decimals: Number(decimals), 
+      name, 
+      symbol, 
+      totalSupply: totalSupply.toString(),
+      backendBalance: ethers.formatUnits(backendBalance, decimals),
+      nativeBalance: ethers.formatEther(nativeBalance),
+      walletAddress: wallet.address,
+      isOwner: wallet.address.toLowerCase() === owner.toLowerCase()
+    };
+    
+    console.log("Contract debug info:", info);
     
     res.json({ 
       success: true,
       contractInfo: {
-        owner,
-        decimals,
-        name,
-        symbol,
-        totalSupply: totalSupply.toString(),
-        walletAddress: wallet.address
+        ...info,
+        backendBalanceWei: backendBalance.toString(),
+        nativeBalanceWei: nativeBalance.toString()
       }
     });
   } catch (err) {
     console.error("Error getting contract info:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Debug endpoint to check if backend can perform operations
+app.get("/debug/test-permissions", async (req, res) => {
+  try {
+    const owner = await contract.owner();
+    const isOwner = wallet.address.toLowerCase() === owner.toLowerCase();
+    const backendBalance = await contract.balanceOf(wallet.address);
+    const nativeBalance = await provider.getBalance(wallet.address);
+    
+    const checks = {
+      isOwner,
+      hasNativeTokens: nativeBalance > ethers.parseEther("0.001"),
+      hasContractTokens: backendBalance > 0,
+      canAssignRewards: isOwner,
+      canDirectTransfer: backendBalance > 0
+    };
+    
+    console.log("Permission checks:", checks);
+    
+    res.json({ 
+      success: true,
+      checks,
+      recommendations: {
+        needsNativeFunding: !checks.hasNativeTokens,
+        needsTokenFunding: !checks.hasContractTokens,
+        needsOwnership: !checks.isOwner
+      }
+    });
+  } catch (err) {
+    console.error("Error checking permissions:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint to fund backend wallet (admin only)
+app.post("/admin/fund-backend", async (req, res) => {
+  const { amount } = req.body;
+  
+  if (!amount) {
+    return res.status(400).json({ error: "Amount is required" });
+  }
+
+  try {
+    const decimals = await contract.decimals();
+    const amountInWei = ethers.parseUnits(amount.toString(), decimals);
+    
+    console.log(`Funding backend wallet with ${amount} tokens...`);
+    
+    // Use fundRewardPool or transfer tokens to backend wallet
+    const nonce = await wallet.getNonce();
+    const fundTx = await contract.fundRewardPool(amountInWei, {
+      nonce: nonce
+    });
+    
+    console.log(`Fund transaction sent: ${fundTx.hash}`);
+    const receipt = await fundTx.wait();
+    console.log(`Fund transaction confirmed: ${fundTx.hash} (Block: ${receipt.blockNumber})`);
+    
+    // Check new balance
+    const newBalance = await contract.balanceOf(wallet.address);
+    const formattedBalance = ethers.formatUnits(newBalance, decimals);
+    
+    res.json({ 
+      success: true, 
+      txHash: fundTx.hash,
+      blockNumber: receipt.blockNumber,
+      message: `Backend wallet funded with ${amount} tokens. New balance: ${formattedBalance}`,
+      newBalance: formattedBalance
+    });
+  } catch (err) {
+    console.error("Error funding backend wallet:", err);
     res.status(500).json({ error: err.message });
   }
 });

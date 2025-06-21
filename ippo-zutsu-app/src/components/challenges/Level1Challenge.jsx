@@ -262,6 +262,66 @@ useEffect(() => {
     onBack();
   };
 
+  // Auto-claim function for users who want to pay gas immediately
+  const handleAutoClaim = async () => {
+    if (!window.ethereum) {
+      alert("MetaMask not detected! Please install MetaMask to claim rewards.");
+      return;
+    }
+
+    setIsClaimingReward(true);
+    
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      
+      const contractABI = [
+        {
+          "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+          "name": "pendingRewards",
+          "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "claimReward",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ];
+      
+      const contractAddress = "0xa47bad07c591b55c83367a078f73261f17bb1ca6";
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+      
+      // Check pending rewards first
+      const pendingRewards = await contract.pendingRewards(playerWalletAddress);
+      console.log("Pending rewards before claim:", pendingRewards.toString());
+      
+      if (pendingRewards > 0) {
+        console.log("Claiming rewards...");
+        const claimTx = await contract.claimReward();
+        console.log("Claim transaction sent:", claimTx.hash);
+        
+        await claimTx.wait();
+        console.log("Rewards claimed successfully!");
+        alert("🎉 Tokens successfully claimed! Check your wallet balance.");
+      } else {
+        alert("No pending rewards found. Please try again in a moment.");
+      }
+    } catch (error) {
+      console.error("Error claiming rewards:", error);
+      if (error.message.includes("execution reverted")) {
+        alert("No pending rewards to claim. They may have already been claimed or are still processing.");
+      } else {
+        alert(`Error claiming rewards: ${error.message}`);
+      }
+    } finally {
+      setIsClaimingReward(false);
+    }
+  };
+
   const handleLevelWin = async () => {
     if (!playerWalletAddress) {
       console.error("No wallet address available");
@@ -312,8 +372,18 @@ useEffect(() => {
       }
 
       if (!response.ok) {
-        if (response.status === 409 && result.code === "TRANSACTION_ALREADY_KNOWN") {
-          console.log("Transaction already submitted, treating as success");
+        if (response.status === 409) {
+          if (result.code === "TRANSACTION_ALREADY_KNOWN") {
+            console.log("Transaction already submitted, treating as success");
+          } else if (result.code === "TRANSACTION_PENDING") {
+            console.log("Transaction already in progress, waiting...");
+            alert("⏳ A reward transaction is already in progress. Please wait a moment and try again.");
+            return;
+          } else if (result.code === "TRANSACTION_RECENTLY_COMPLETED") {
+            console.log("Reward already assigned recently");
+            alert("✅ You've already received this reward recently!");
+            return;
+          }
         } else {
           console.error("Reward error:", result.error || "Unknown error");
           console.error("Status code:", response.status);
@@ -321,12 +391,36 @@ useEffect(() => {
           return;
         }
       } else {
-        console.log("Reward assigned successfully:", result);
+        console.log("Reward processed successfully:", result);
       }
 
-      // Step 2: Tokens are now transferred directly - just confirm and notify user
-      console.log("Tokens transferred directly to your wallet!");
-      alert("🎉 Congratulations! 50 MOVE tokens have been transferred directly to your wallet. No claiming needed - check your balance!");
+      // Check if tokens were transferred directly (no gas fees) or need claiming
+      if (result.gasFreeTansfer) {
+        // Tokens transferred directly - user paid ZERO gas fees!
+        console.log("🎉 Tokens transferred directly - user paid ZERO fees!");
+        alert("🎉 AMAZING! Tokens transferred directly to your wallet with ZERO gas fees for you!");
+      } else if (result.requiresManualClaim) {
+        // Tokens assigned but need claiming - offer user choice
+        console.log("Reward assigned, offering claim options...");
+        
+        const userChoice = confirm(
+          "🎉 Reward assigned! You have 2 options:\n\n" +
+          "✅ CLICK OK = Auto-claim now (small gas fee required)\n" +
+          "❌ CLICK CANCEL = Claim later anytime (tokens will be pending)\n\n" +
+          "Choose your preference:"
+        );
+        
+        if (userChoice) {
+          // User chose to auto-claim (pay gas now)
+          await handleAutoClaim();
+        } else {
+          // User chose to claim later (no gas fees now)
+          alert("✅ Tokens are pending in your account! You can claim them later from your wallet without any time limit.");
+        }
+      } else {
+        // Default case - show success message
+        alert("✅ Reward processed successfully!");
+      }
 
     } catch (error) {
       console.error("Network error:", error);
@@ -428,7 +522,11 @@ useEffect(() => {
                 <li className="flex items-center justify-center">
                   <span className="text-lg mr-2">🪙</span>
                   <span className="text-purple-200">50 Move Tokens</span>
-                  <span className="ml-2 text-green-300 text-sm">✓ Transferred</span>
+                  {isClaimingReward ? (
+                    <span className="ml-2 text-yellow-300 text-sm">Claiming...</span>
+                  ) : (
+                    <span className="ml-2 text-blue-300 text-sm">✓ Assigned</span>
+                  )}
                 </li>
                 
                 <li className="flex items-center justify-center">
@@ -439,14 +537,29 @@ useEffect(() => {
               
               <div className="mt-3 text-center">
                 <div className="text-green-300 text-sm">
-                  🎉 Tokens have been transferred directly to your wallet - no gas fees required!
+                  🎉 Tokens transferred with <strong>ZERO gas fees</strong> for you!
                 </div>
+                <div className="text-green-200 text-xs mt-1">
+                  Check your wallet balance - backend paid all network fees
+                </div>
+                {isClaimingReward && (
+                  <div className="text-yellow-300 text-sm mt-2">
+                    ⏳ Claiming in progress - please confirm the transaction in your wallet!
+                  </div>
+                )}
               </div>
             </div>
             
-            <div className="flex justify-center">
+            <div className="flex justify-center space-x-4">
               <button 
-                className="btn-primary py-2 px-8"
+                className={`btn-secondary py-2 px-6 ${isClaimingReward ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => !isClaimingReward && handleAutoClaim()}
+                disabled={isClaimingReward}
+              >
+                {isClaimingReward ? 'Claiming...' : 'Claim Now'}
+              </button>
+              <button 
+                className="btn-primary py-2 px-6"
                 onClick={handleContinue}
               >
                 Continue
