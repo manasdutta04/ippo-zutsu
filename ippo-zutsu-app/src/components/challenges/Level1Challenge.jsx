@@ -324,94 +324,9 @@ useEffect(() => {
         console.log("Reward assigned successfully:", result);
       }
 
-      // Step 2: Double-check pending rewards via backend and claim if available
-      if (window.ethereum) {
-        console.log("Checking pending rewards before claiming...");
-        setIsClaimingReward(true);
-        
-        try {
-          // First, check via backend API for additional verification
-          console.log("Checking pending rewards via backend API...");
-          const pendingResponse = await fetch(`http://localhost:3000/pending-rewards/${playerWalletAddress}`);
-          const pendingData = await pendingResponse.json();
-          
-          console.log("Backend pending rewards response:", pendingData);
-
-          console.log("Using imported ethers v6");
-
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const signer = await provider.getSigner();
-          
-          console.log("Provider created, signer obtained");
-          
-          // Contract ABI for both pendingRewards and claimReward functions
-          const contractABI = [
-            {
-              "inputs": [
-                {
-                  "internalType": "address",
-                  "name": "",
-                  "type": "address"
-                }
-              ],
-              "name": "pendingRewards",
-              "outputs": [
-                {
-                  "internalType": "uint256",
-                  "name": "",
-                  "type": "uint256"
-                }
-              ],
-              "stateMutability": "view",
-              "type": "function"
-            },
-            {
-              "inputs": [],
-              "name": "claimReward",
-              "outputs": [],
-              "stateMutability": "nonpayable",
-              "type": "function"
-            }
-          ];
-          
-          // Contract address from environment or hardcoded
-          const contractAddress = "0xa47bad07c591b55c83367a078f73261f17bb1ca6"; // Replace with actual contract address
-          const contract = new ethers.Contract(contractAddress, contractABI, signer);
-          
-          // Check pending rewards directly from contract as well
-          console.log("Checking pending rewards directly from contract for address:", playerWalletAddress);
-          const pendingRewards = await contract.pendingRewards(playerWalletAddress);
-          console.log("Direct contract pending rewards (raw):", pendingRewards.toString());
-          
-          if (pendingRewards > 0) {
-            console.log("Pending rewards found, proceeding to claim...");
-            
-            const claimTx = await contract.claimReward();
-            console.log("Claim transaction sent:", claimTx.hash);
-            
-            await claimTx.wait();
-            console.log("Reward claimed successfully!");
-            alert("Tokens successfully claimed! Check your wallet balance.");
-          } else {
-            console.log("No pending rewards to claim");
-            console.log("Backend says pending rewards:", pendingData.pendingRewards);
-            alert(`No pending rewards found to claim. Backend shows: ${pendingData.pendingRewards || 0} MOVE tokens pending.`);
-          }
-        } catch (claimError) {
-          console.error("Error checking/claiming reward:", claimError);
-          
-          if (claimError.message && claimError.message.includes("execution reverted")) {
-            alert("Unable to claim rewards. This usually means you have no pending rewards to claim.");
-          } else {
-            alert(`Error claiming reward: ${claimError.message}`);
-          }
-        } finally {
-          setIsClaimingReward(false);
-        }
-      } else {
-        console.error("MetaMask not detected");
-        alert("Please install MetaMask to claim your rewards!");
-      }
+      // Step 2: Tokens are now transferred directly - just confirm and notify user
+      console.log("Tokens transferred directly to your wallet!");
+      alert("🎉 Congratulations! 50 MOVE tokens have been transferred directly to your wallet. No claiming needed - check your balance!");
 
     } catch (error) {
       console.error("Network error:", error);
@@ -513,9 +428,7 @@ useEffect(() => {
                 <li className="flex items-center justify-center">
                   <span className="text-lg mr-2">🪙</span>
                   <span className="text-purple-200">50 Move Tokens</span>
-                  {isClaimingReward && (
-                    <span className="ml-2 text-yellow-300 text-sm">Claiming...</span>
-                  )}
+                  <span className="ml-2 text-green-300 text-sm">✓ Transferred</span>
                 </li>
                 
                 <li className="flex items-center justify-center">
@@ -524,22 +437,19 @@ useEffect(() => {
                 </li>
               </ul>
               
-              {isClaimingReward && (
-                <div className="mt-3 text-center">
-                  <div className="text-yellow-300 text-sm">
-                    Please confirm the transaction in your wallet to claim your tokens!
-                  </div>
+              <div className="mt-3 text-center">
+                <div className="text-green-300 text-sm">
+                  🎉 Tokens have been transferred directly to your wallet - no gas fees required!
                 </div>
-              )}
+              </div>
             </div>
             
             <div className="flex justify-center">
               <button 
-                className={`btn-primary py-2 px-8 ${isClaimingReward ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className="btn-primary py-2 px-8"
                 onClick={handleContinue}
-                disabled={isClaimingReward}
               >
-                {isClaimingReward ? 'Claiming Rewards...' : 'Continue'}
+                Continue
               </button>
             </div>
           </motion.div>

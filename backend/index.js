@@ -73,9 +73,15 @@ app.post("/reward", async (req, res) => {
     // Get the current nonce to ensure transaction uniqueness
     const nonce = await wallet.getNonce();
     
-    const tx = await contract.assignReward(playerAddress, amountInWei, {
+    // Option 1: Direct transfer (user pays no gas)
+    const tx = await contract.transfer(playerAddress, amountInWei, {
       nonce: nonce
     });
+    
+    // Option 2: Keep using assignReward (user pays gas to claim)
+    // const tx = await contract.assignReward(playerAddress, amountInWei, {
+    //   nonce: nonce
+    // });
     
     console.log(`Transaction sent with nonce ${nonce}: ${tx.hash}`);
     await tx.wait();
