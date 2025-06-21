@@ -6,7 +6,7 @@ import avatarStandingGif from '../../assets/avatar-standing.gif';
 import avatarVictoryGif from '../../assets/avatar-victory.gif';
 import wolfGif from '../../assets/wolf.gif';
 
-function Level2Challenge({ onBack }) {
+function Level2Challenge({ onBack, onComplete }) {
   const [steps, setSteps] = useState(0);
   const [targetSteps, setTargetSteps] = useState(100);
   const [isRunning, setIsRunning] = useState(false);
@@ -242,6 +242,10 @@ function Level2Challenge({ onBack }) {
 
   // Handle continue button click in victory popup
   const handleContinue = () => {
+    // Mark level as completed
+    if (onComplete) {
+      onComplete();
+    }
     // Close the popup and go back to dashboard
     setShowVictoryPopup(false);
     onBack();

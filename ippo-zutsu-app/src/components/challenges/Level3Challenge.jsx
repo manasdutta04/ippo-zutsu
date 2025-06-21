@@ -6,7 +6,7 @@ import avatarStandingGif from '../../assets/avatar-standing.gif';
 import avatarVictoryGif from '../../assets/avatar-victory.gif';
 import dragonGif from '../../assets/dragon.gif';
 
-function Level3Challenge({ onBack }) {
+function Level3Challenge({ onBack, onComplete }) {
   const [steps, setSteps] = useState(0);
   const [targetSteps, setTargetSteps] = useState(500);
   const [isRunning, setIsRunning] = useState(false);
@@ -242,6 +242,10 @@ function Level3Challenge({ onBack }) {
 
   // Handle continue button click in victory popup
   const handleContinue = () => {
+    // Mark level as completed
+    if (onComplete) {
+      onComplete();
+    }
     // Close the popup and go back to dashboard
     setShowVictoryPopup(false);
     onBack();

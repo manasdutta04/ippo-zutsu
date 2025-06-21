@@ -8,7 +8,7 @@ import avatarVictoryGif from '../../assets/avatar-victory.gif';
 import goblinGif from '../../assets/goblin.gif';
 
 
-function Level1Challenge({ onBack }) {
+function Level1Challenge({ onBack, onComplete }) {
   const [steps, setSteps] = useState(0);
   const [targetSteps, setTargetSteps] = useState(50);
   const [isRunning, setIsRunning] = useState(false);
@@ -262,6 +262,10 @@ useEffect(() => {
 
   // Handle continue button click in victory popup
   const handleContinue = () => {
+    // Mark level as completed
+    if (onComplete) {
+      onComplete();
+    }
     // Close the popup and go back to dashboard
     setShowVictoryPopup(false);
     onBack();

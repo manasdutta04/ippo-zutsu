@@ -27,6 +27,7 @@ function Dashboard() {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress,setWalletAddress]=useState("");
   const [activeChallenge, setActiveChallenge] = useState(null); // null, 'level1', 'level2', 'level3'
+  const [completedLevels, setCompletedLevels] = useState(new Set()); // Track completed levels
   
   const [moveBalance, setMoveBalance] = useState(0);
   
@@ -34,7 +35,52 @@ function Dashboard() {
   useEffect(()=>{
     getConnectedWallet();
     addWalletListener();
+    loadCompletedLevels();
   })
+
+  // Load completed levels from localStorage
+  const loadCompletedLevels = () => {
+    try {
+      const saved = localStorage.getItem('ippo-zutsu-completed-levels');
+      if (saved) {
+        const completed = JSON.parse(saved);
+        setCompletedLevels(new Set(completed));
+      }
+    } catch (error) {
+      console.error('Error loading completed levels:', error);
+    }
+  };
+
+  // Save completed levels to localStorage
+  const saveCompletedLevels = (levels) => {
+    try {
+      const levelsArray = Array.from(levels);
+      localStorage.setItem('ippo-zutsu-completed-levels', JSON.stringify(levelsArray));
+    } catch (error) {
+      console.error('Error saving completed levels:', error);
+    }
+  };
+
+  // Mark a level as completed
+  const markLevelCompleted = (level) => {
+    const newCompleted = new Set(completedLevels);
+    newCompleted.add(level);
+    setCompletedLevels(newCompleted);
+    saveCompletedLevels(newCompleted);
+  };
+
+  // Check if a level is unlocked
+  const isLevelUnlocked = (level) => {
+    if (level === 1) return true; // Level 1 is always unlocked
+    if (level === 2) return completedLevels.has(1); // Level 2 unlocked if Level 1 completed
+    if (level === 3) return completedLevels.has(1) && completedLevels.has(2); // Level 3 unlocked if Level 1 & 2 completed
+    return false;
+  };
+
+  // Check if a level is completed
+  const isLevelCompleted = (level) => {
+    return completedLevels.has(level);
+  };
 
   // Mock wallet data
   const walletData = {
@@ -196,15 +242,24 @@ useEffect(() => {
 
   // If a challenge is active, show the corresponding challenge component
   if (activeChallenge === 'level1') {
-    return <Level1Challenge onBack={() => setActiveChallenge(null)} />;
+    return <Level1Challenge 
+      onBack={() => setActiveChallenge(null)} 
+      onComplete={() => markLevelCompleted(1)}
+    />;
   }
   
   if (activeChallenge === 'level2') {
-    return <Level2Challenge onBack={() => setActiveChallenge(null)} />;
+    return <Level2Challenge 
+      onBack={() => setActiveChallenge(null)} 
+      onComplete={() => markLevelCompleted(2)}
+    />;
   }
   
   if (activeChallenge === 'level3') {
-    return <Level3Challenge onBack={() => setActiveChallenge(null)} />;
+    return <Level3Challenge 
+      onBack={() => setActiveChallenge(null)} 
+      onComplete={() => markLevelCompleted(3)}
+    />;
   }
 
   return (
@@ -472,51 +527,101 @@ useEffect(() => {
             >
               <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <h2 className="text-lg sm:text-xl font-anime text-white">Select Challenge Level</h2>
-                <button 
-                  className="text-white hover:text-purple-300 text-xl"
-                  onClick={() => setIsChallengeModalOpen(false)}
-                >
-                  ✕
-                </button>
+                <div className="flex items-center space-x-2">
+                  {/* Debug Reset Button - Remove in production */}
+                  <button 
+                    className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                    onClick={() => {
+                      localStorage.removeItem('ippo-zutsu-completed-levels');
+                      setCompletedLevels(new Set());
+                      alert('Progress reset for testing!');
+                    }}
+                    title="Reset progress (testing only)"
+                  >
+                    Reset
+                  </button>
+                  <button 
+                    className="text-white hover:text-purple-300 text-xl"
+                    onClick={() => setIsChallengeModalOpen(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-3 sm:space-y-4">
+                {/* Level 1 */}
                 <button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-anime py-3 sm:py-4 px-4 sm:px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300"
+                  className={`w-full ${isLevelCompleted(1) ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-anime py-3 sm:py-4 px-4 sm:px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300`}
                   onClick={() => {
                     setIsChallengeModalOpen(false);
                     setActiveChallenge('level1');
                   }}
                 >
-                  <span className="text-base sm:text-lg">Level 1</span>
+                  <div className="flex items-center">
+                    <span className="text-base sm:text-lg mr-2">Level 1</span>
+                    {isLevelCompleted(1) && <span className="text-green-300 text-sm">✓ Completed</span>}
+                  </div>
                   <div className="flex items-center">
                     <span className="text-yellow-300 mr-1">★</span>
                     <span className="text-gray-400">★★</span>
                   </div>
                 </button>
                 
+                {/* Level 2 */}
                 <button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-anime py-3 sm:py-4 px-4 sm:px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300"
+                  className={`w-full ${
+                    !isLevelUnlocked(2) 
+                      ? 'bg-gray-600 cursor-not-allowed opacity-60' 
+                      : isLevelCompleted(2) 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white font-anime py-3 sm:py-4 px-4 sm:px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300`}
                   onClick={() => {
+                    if (!isLevelUnlocked(2)) {
+                      alert('Complete Level 1 to unlock Level 2!');
+                      return;
+                    }
                     setIsChallengeModalOpen(false);
                     setActiveChallenge('level2');
                   }}
+                  disabled={!isLevelUnlocked(2)}
                 >
-                  <span className="text-base sm:text-lg">Level 2</span>
+                  <div className="flex items-center">
+                    <span className="text-base sm:text-lg mr-2">Level 2</span>
+                    {!isLevelUnlocked(2) && <span className="text-red-300 text-sm">🔒 Locked</span>}
+                    {isLevelUnlocked(2) && isLevelCompleted(2) && <span className="text-green-300 text-sm">✓ Completed</span>}
+                  </div>
                   <div className="flex items-center">
                     <span className="text-yellow-300 mr-1">★★</span>
                     <span className="text-gray-400">★</span>
                   </div>
                 </button>
                 
+                {/* Level 3 */}
                 <button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-anime py-3 sm:py-4 px-4 sm:px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300"
+                  className={`w-full ${
+                    !isLevelUnlocked(3) 
+                      ? 'bg-gray-600 cursor-not-allowed opacity-60' 
+                      : isLevelCompleted(3) 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white font-anime py-3 sm:py-4 px-4 sm:px-6 rounded-lg pixel-border flex items-center justify-between transition-all duration-300`}
                   onClick={() => {
+                    if (!isLevelUnlocked(3)) {
+                      alert('Complete Level 1 and Level 2 to unlock Level 3!');
+                      return;
+                    }
                     setIsChallengeModalOpen(false);
                     setActiveChallenge('level3');
                   }}
+                  disabled={!isLevelUnlocked(3)}
                 >
-                  <span className="text-base sm:text-lg">Level 3</span>
+                  <div className="flex items-center">
+                    <span className="text-base sm:text-lg mr-2">Level 3</span>
+                    {!isLevelUnlocked(3) && <span className="text-red-300 text-sm">🔒 Locked</span>}
+                    {isLevelUnlocked(3) && isLevelCompleted(3) && <span className="text-green-300 text-sm">✓ Completed</span>}
+                  </div>
                   <div className="flex items-center">
                     <span className="text-yellow-300">★★★</span>
                   </div>
