@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import avatarFightingGif from '../../assets/avatar-fighting.gif';
+import avatarRunningGif from '../../assets/avatar-running.gif';
+import avatarStandingGif from '../../assets/avatar-standing.gif';
+import avatarVictoryGif from '../../assets/avatar-victory.gif';
+import wolfGif from '../../assets/wolf.gif';
 
 function Level2Challenge({ onBack }) {
   const [steps, setSteps] = useState(0);
@@ -273,14 +278,14 @@ function Level2Challenge({ onBack }) {
             <div className="flex justify-between items-center mb-6">
               <div className="w-1/2 flex justify-center">
                 <img 
-                  src="/src/assets/avatar-fighting.gif" 
+                  src={avatarFightingGif} 
                   alt="Fighting Avatar" 
                   className="h-32 object-contain"
                 />
               </div>
               <div className="w-1/2 flex justify-center">
                 <img 
-                  src="/src/assets/wolf.gif" 
+                  src={wolfGif} 
                   alt="Goblin" 
                   className="h-32 object-contain"
                 />
@@ -322,7 +327,7 @@ function Level2Challenge({ onBack }) {
             
             <div className="flex justify-center mb-6">
               <img 
-                src="/src/assets/avatar-victory.gif" 
+                src={avatarVictoryGif} 
                 alt="Victory Avatar" 
                 className="h-40 object-contain"
               />
@@ -370,7 +375,7 @@ function Level2Challenge({ onBack }) {
         
         <div className="flex justify-center mb-6">
           <img 
-            src={isMoving ? "/src/assets/avatar-running.gif" : "/src/assets/avatar-standing.gif"}
+            src={isMoving ? avatarRunningGif : avatarStandingGif}
             alt={isMoving ? "Running Avatar" : "Standing Avatar"} 
             className="w-64 h-64 sm:w-80 sm:h-80 object-contain"
           />
