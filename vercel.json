@@ -1,10 +1,9 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "cd ippo-zutsu-app && npm run build",
   "outputDirectory": "ippo-zutsu-app/dist",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "devCommand": "cd ippo-zutsu-app && npm run dev",
+  "installCommand": "cd ippo-zutsu-app && npm install",
   "framework": "vite",
-  "rootDirectory": "ippo-zutsu-app",
   "rewrites": [
     {
       "source": "/(.*)",
