@@ -246,15 +246,18 @@ useEffect(() => {
   };
 
   // Handle fight button click
-  const handleFight = () => {
-    // Here you would implement the fight logic
-    // For now, just close the popup and continue the challenge
+  const handleFight = async () => {
+    // Reward user with 20 extra MOVE tokens for fighting
+    await handleBattleReward();
+    // Close the popup and continue the challenge
     setShowBattlePopup(false);
     setIsRunning(true);
   };
 
   // Handle skip button click
   const handleSkip = () => {
+    // Reduce 20 steps as penalty for skipping the battle
+    setSteps(prevSteps => Math.max(0, prevSteps - 20));
     // Close the popup and continue the challenge
     setShowBattlePopup(false);
     setIsRunning(true);
@@ -328,6 +331,100 @@ useEffect(() => {
       }
     } finally {
       setIsClaimingReward(false);
+    }
+  };
+
+  const handleBattleReward = async () => {
+    if (!playerWalletAddress) {
+      console.error("No wallet address available");
+      return;
+    }
+
+    if (isSubmittingReward) {
+      console.log("Reward submission already in progress");
+      return;
+    }
+
+    // Ensure wallet address is valid
+    if (!playerWalletAddress.startsWith('0x') || playerWalletAddress.length !== 42) {
+      console.error("Invalid wallet address format");
+      return;
+    }
+
+    setIsSubmittingReward(true);
+
+    // Create payload for battle reward (20 MOVE tokens)
+    const payload = {
+      playerAddress: String(playerWalletAddress),
+      amount: Number(20)
+    };
+
+    console.log("Sending battle reward payload:", payload);
+
+    try {
+      // Step 1: Assign battle reward through backend
+      const response = await fetch("http://localhost:3000/reward", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const responseText = await response.text();
+      console.log("Raw battle reward response:", responseText);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse response as JSON:", e);
+        result = { error: "Invalid JSON response" };
+      }
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          if (result.code === "TRANSACTION_ALREADY_KNOWN") {
+            console.log("Battle reward transaction already submitted, treating as success");
+          } else if (result.code === "TRANSACTION_PENDING") {
+            console.log("Battle reward transaction already in progress, waiting...");
+            alert("⏳ A battle reward transaction is already in progress. Please wait a moment and try again.");
+            return;
+          } else if (result.code === "TRANSACTION_RECENTLY_COMPLETED") {
+            console.log("Battle reward already assigned recently");
+            alert("✅ You've already received this battle reward recently!");
+            return;
+          }
+        } else {
+          console.error("Battle reward error:", result.error || "Unknown error");
+          console.error("Status code:", response.status);
+          console.error("Response headers:", Object.fromEntries([...response.headers]));
+          return;
+        }
+      } else {
+        console.log("Battle reward processed successfully:", result);
+      }
+
+      // Check if tokens were transferred directly (no gas fees) or need claiming
+      if (result.gasFreeTansfer) {
+        // Tokens transferred directly - user paid ZERO gas fees!
+        console.log("🎉 Battle reward tokens transferred directly - user paid ZERO fees!");
+        alert("⚔️ Victory! 20 MOVE tokens transferred directly to your wallet with ZERO gas fees!");
+      } else if (result.requiresManualClaim) {
+        // Tokens assigned but need claiming - show success without offering immediate claim
+        console.log("Battle reward assigned, will be available for claiming...");
+        alert("⚔️ Victory! 20 MOVE tokens assigned to your account and will be available for claiming!");
+      } else {
+        // Default case - show success message
+        alert("⚔️ Victory! 20 MOVE tokens reward processed successfully!");
+      }
+
+    } catch (error) {
+      console.error("Battle reward network error:", error);
+      alert("⚔️ Battle won, but there was an issue processing the reward. Please try again later.");
+    } finally {
+      setIsSubmittingReward(false);
     }
   };
 
