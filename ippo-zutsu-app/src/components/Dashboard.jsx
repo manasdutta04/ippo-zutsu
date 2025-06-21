@@ -23,7 +23,7 @@ function Dashboard() {
   const [teamOption, setTeamOption] = useState(null); // 'join' or 'create'
   const [teamCode, setTeamCode] = useState('');
   const [teamName, setTeamName] = useState('');
-  const [activeWalletTab, setActiveWalletTab] = useState('tokens'); // 'tokens' or 'nfts'
+  const [activeWalletTab, setActiveWalletTab] = useState('activity'); // 'activity' or 'nfts'
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress,setWalletAddress]=useState("");
   const [activeChallenge, setActiveChallenge] = useState(null); // null, 'level1', 'level2', 'level3'
@@ -85,10 +85,34 @@ function Dashboard() {
   // Mock wallet data
   const walletData = {
     balance: '2,450.75',
-    tokens: [
-      { id: 1, name: 'STEP', amount: '1,250', icon: '👣', value: '$625.00' },
-      { id: 2, name: 'ENERGY', amount: '750', icon: '⚡', value: '$375.00' },
-      { id: 3, name: 'QUEST', amount: '450', icon: '🏆', value: '$225.00' }
+    activities: [
+      { 
+        id: 1, 
+        type: 'Claimed Reward', 
+        amount: '+50 MOVE', 
+        description: 'Level 1 Challenge Completed',
+        timestamp: '2 hours ago',
+        icon: '🎉',
+        color: 'text-green-400'
+      },
+      { 
+        id: 2, 
+        type: 'Spend Tokens', 
+        amount: '-300 MOVE', 
+        description: 'Purchased Fire Gloves',
+        timestamp: '1 day ago',
+        icon: '🛒',
+        color: 'text-red-400'
+      },
+      { 
+        id: 3, 
+        type: 'Claimed Reward', 
+        amount: '+100 MOVE', 
+        description: 'Level 2 Challenge Completed',
+        timestamp: '3 days ago',
+        icon: '🏆',
+        color: 'text-green-400'
+      }
     ],
     nfts: [
       { id: 1, name: 'Fire Gloves', rarity: 'Legendary', image: '🧤', boost: '+15% attack' },
@@ -362,13 +386,13 @@ useEffect(() => {
               whileHover={{ scale: 1.03 }}
               onClick={card.onClick}
             >
-              <div className="flex justify-between items-start h-full">
-                <div className="flex-1">
+              <div className="flex items-start space-x-3 h-full">
+                <div className="text-2xl sm:text-3xl flex-shrink-0">{card.icon}</div>
+                <div className="flex-1 min-w-0">
                   <p className="text-white/80 text-xs sm:text-sm font-anime">{card.title}</p>
                   <p className="text-white text-lg sm:text-2xl font-bold mt-1">{card.value}</p>
                   <p className="text-white/80 text-xs mt-1 sm:mt-2">{card.increase}</p>
                 </div>
-                <div className="text-2xl sm:text-3xl">{card.icon}</div>
               </div>
             </motion.div>
           ))}
@@ -747,7 +771,7 @@ useEffect(() => {
       <AnimatePresence>
         {isWalletModalOpen && (
           <motion.div
-            className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/70 flex items-center justify-center p-3 sm:p-4 z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -756,16 +780,16 @@ useEffect(() => {
             }}
           >
             <motion.div
-              className="bg-purple-900 p-6 rounded-xl pixel-border w-full max-w-4xl"
+              className="bg-purple-900 p-4 sm:p-6 rounded-xl pixel-border w-full max-w-sm sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-anime text-white">Your Wallet</h2>
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-anime text-white">Your Wallet</h2>
                 <button 
-                  className="text-white hover:text-purple-300"
+                  className="text-white hover:text-purple-300 text-xl sm:text-2xl"
                   onClick={() => setIsWalletModalOpen(false)}
                 >
                   ✕
@@ -773,60 +797,52 @@ useEffect(() => {
               </div>
               
               {/* Wallet Balance */}
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-lg pixel-border mb-6">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-6 rounded-lg pixel-border mb-4 sm:mb-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white/80 text-sm font-anime">Total Balance</p>
-                    <p className="text-white text-3xl font-bold mt-1">{moveBalance ? `${moveBalance} MOVE` : 'Fetching MOVE balance...'}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/80 text-xs sm:text-sm font-anime">Total Balance</p>
+                    <p className="text-white text-xl sm:text-3xl font-bold mt-1 truncate">{moveBalance ? `${moveBalance} MOVE` : 'Fetching MOVE balance...'}</p>
                   </div>
-                  <div className="text-4xl">💰</div>
+                  <div className="text-3xl sm:text-4xl ml-2">💰</div>
                 </div>
               </div>
               
               {/* Tabs */}
-              <div className="flex border-b border-purple-700 mb-6">
+              <div className="flex border-b border-purple-700 mb-4 sm:mb-6">
                 <button 
-                  className={`py-2 px-6 font-anime text-sm ${activeWalletTab === 'tokens' ? 'text-white border-b-2 border-game-accent' : 'text-purple-300 hover:text-white'}`}
-                  onClick={() => setActiveWalletTab('tokens')}
+                  className={`py-2 px-4 sm:px-6 font-anime text-xs sm:text-sm flex-1 sm:flex-none ${activeWalletTab === 'activity' ? 'text-white border-b-2 border-game-accent' : 'text-purple-300 hover:text-white'}`}
+                  onClick={() => setActiveWalletTab('activity')}
                 >
-                  Tokens
+                  Activity
                 </button>
                 <button 
-                  className={`py-2 px-6 font-anime text-sm ${activeWalletTab === 'nfts' ? 'text-white border-b-2 border-game-accent' : 'text-purple-300 hover:text-white'}`}
+                  className={`py-2 px-4 sm:px-6 font-anime text-xs sm:text-sm flex-1 sm:flex-none ${activeWalletTab === 'nfts' ? 'text-white border-b-2 border-game-accent' : 'text-purple-300 hover:text-white'}`}
                   onClick={() => setActiveWalletTab('nfts')}
                 >
                   NFTs
                 </button>
               </div>
               
-              {/* Tokens Tab */}
-              {activeWalletTab === 'tokens' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-4 text-purple-300 text-sm font-anime px-4 py-2">
-                    <div>Token</div>
-                    <div>Amount</div>
-                    <div>Value</div>
-                    <div className="text-right">Actions</div>
-                  </div>
-                  
-                  {walletData.tokens.map(token => (
+              {/* Activity Tab */}
+              {activeWalletTab === 'activity' && (
+                <div className="space-y-3 sm:space-y-4">
+                  {walletData.activities.map(activity => (
                     <div 
-                      key={token.id}
-                      className="grid grid-cols-4 items-center bg-purple-800/50 rounded-lg px-4 py-3 hover:bg-purple-800/70 transition-colors"
+                      key={activity.id}
+                      className="bg-purple-800/50 rounded-lg px-3 sm:px-4 py-3 sm:py-4 hover:bg-purple-800/70 transition-colors border-l-4 border-purple-500"
                     >
-                      <div className="flex items-center">
-                        <span className="text-2xl mr-3">{token.icon}</span>
-                        <span className="text-white font-semibold">{token.name}</span>
-                      </div>
-                      <div className="text-white">{token.amount}</div>
-                      <div className="text-white">{token.value}</div>
-                      <div className="flex justify-end space-x-2">
-                        <button className="bg-purple-700 hover:bg-purple-600 text-white text-xs py-1 px-2 rounded">
-                          Swap
-                        </button>
-                        <button className="bg-purple-700 hover:bg-purple-600 text-white text-xs py-1 px-2 rounded">
-                          Send
-                        </button>
+                      <div className="flex items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-start sm:items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                          <span className="text-xl sm:text-2xl flex-shrink-0">{activity.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white font-semibold text-sm sm:text-base">{activity.type}</div>
+                            <div className="text-purple-300 text-xs sm:text-sm truncate">{activity.description}</div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className={`font-bold text-sm sm:text-base ${activity.color}`}>{activity.amount}</div>
+                          <div className="text-purple-400 text-xs">{activity.timestamp}</div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -835,18 +851,18 @@ useEffect(() => {
               
               {/* NFTs Tab */}
               {activeWalletTab === 'nfts' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   {walletData.nfts.map(nft => (
                     <div 
                       key={nft.id}
-                      className="bg-purple-800/50 rounded-lg p-4 hover:bg-purple-800/70 transition-colors pixel-border"
+                      className="bg-purple-800/50 rounded-lg p-3 sm:p-4 hover:bg-purple-800/70 transition-colors pixel-border"
                     >
-                      <div className="bg-gradient-to-br from-purple-700 to-purple-900 w-full aspect-square rounded-lg flex items-center justify-center mb-3">
-                        <span className="text-5xl">{nft.image}</span>
+                      <div className="bg-gradient-to-br from-purple-700 to-purple-900 w-full aspect-square rounded-lg flex items-center justify-center mb-2 sm:mb-3">
+                        <span className="text-3xl sm:text-4xl lg:text-5xl">{nft.image}</span>
                       </div>
-                      <h3 className="text-white font-semibold">{nft.name}</h3>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className={`text-xs px-2 py-1 rounded ${
+                      <h3 className="text-white font-semibold text-sm sm:text-base truncate">{nft.name}</h3>
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-2 gap-1 sm:gap-0">
+                        <span className={`text-xs px-2 py-1 rounded text-center sm:text-left ${
                           nft.rarity === 'Legendary' ? 'bg-yellow-500/20 text-yellow-300' :
                           nft.rarity === 'Epic' ? 'bg-purple-500/20 text-purple-300' :
                           nft.rarity === 'Rare' ? 'bg-blue-500/20 text-blue-300' :
@@ -854,7 +870,7 @@ useEffect(() => {
                         }`}>
                           {nft.rarity}
                         </span>
-                        <span className="text-white/80 text-xs">{nft.boost}</span>
+                        <span className="text-white/80 text-xs text-center sm:text-right truncate">{nft.boost}</span>
                       </div>
                     </div>
                   ))}
