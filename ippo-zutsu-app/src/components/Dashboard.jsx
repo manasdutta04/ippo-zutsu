@@ -7,6 +7,10 @@ import Level1Challenge from './challenges/Level1Challenge';
 import Level2Challenge from './challenges/Level2Challenge';
 import Level3Challenge from './challenges/Level3Challenge';
 
+import { BrowserProvider } from 'ethers';
+import { getMoveBalance } from '../web3/getMoveBalance';
+
+
 function Dashboard() {
   const { user, signOut } = useUser();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -21,6 +25,8 @@ function Dashboard() {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress,setWalletAddress]=useState("");
   const [activeChallenge, setActiveChallenge] = useState(null); // null, 'level1', 'level2', 'level3'
+  
+  const [moveBalance, setMoveBalance] = useState(0);
   
 
   useEffect(()=>{
@@ -152,6 +158,19 @@ const connectWallet = async() => {
       onClick: () => setIsStoreOpen(true)
     }
   ];
+useEffect(() => {
+  const fetchMoveBalance = async () => {
+    if (walletAddress && window.ethereum) {
+      const provider = new BrowserProvider(window.ethereum);
+      const balance = await getMoveBalance(walletAddress, provider);
+      setMoveBalance(balance); // <- Save to state
+      console.log("MOVE Balance:", balance);
+    }
+  };
+
+  fetchMoveBalance();
+}, [walletAddress]);
+
 
   // If store is open, show the store component
   if (isStoreOpen) {
@@ -545,20 +564,9 @@ const connectWallet = async() => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white/80 text-sm font-anime">Total Balance</p>
-                    <p className="text-white text-3xl font-bold mt-1">${walletData.balance}</p>
+                    <p className="text-white text-3xl font-bold mt-1">{moveBalance ? `${moveBalance} MOVE` : 'Fetching MOVE balance...'}</p>
                   </div>
                   <div className="text-4xl">💰</div>
-                </div>
-                <div className="mt-4 flex justify-between">
-                  <button className="bg-white/20 hover:bg-white/30 text-white text-sm py-2 px-4 rounded-lg transition-colors">
-                    Deposit
-                  </button>
-                  <button className="bg-white/20 hover:bg-white/30 text-white text-sm py-2 px-4 rounded-lg transition-colors">
-                    Withdraw
-                  </button>
-                  <button className="bg-white/20 hover:bg-white/30 text-white text-sm py-2 px-4 rounded-lg transition-colors">
-                    Send
-                  </button>
                 </div>
               </div>
               

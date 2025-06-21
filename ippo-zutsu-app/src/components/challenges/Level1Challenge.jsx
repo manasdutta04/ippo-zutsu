@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { rewardPlayer } from '../../web3/rewardPlayer';
 
 function Level1Challenge({ onBack }) {
   const [steps, setSteps] = useState(0);
@@ -19,6 +20,16 @@ function Level1Challenge({ onBack }) {
   const peakDetectedRef = useRef(false);
   const stepThresholdRef = useRef(1.2); // Adjust based on testing
   const stepCooldownRef = useRef(false);
+
+  const handleLevelComplete = async () => {
+  try {
+    const rewardAmount = 10; // Amount of MOVE tokens to reward
+    await rewardPlayer(walletAddress, rewardAmount);
+    alert('Player rewarded with MOVE tokens!');
+  } catch (error) {
+    alert('Failed to send reward: ' + error.message);
+  }
+};
 
   // Request permission for Device Motion API
   const requestMotionPermission = async () => {
