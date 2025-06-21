@@ -8,6 +8,7 @@ import luckyCharmImage from '../assets/lucky-charm.png';
 
 function Store({ onBack, onOpenWallet }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [newlyMintedNFT, setNewlyMintedNFT] = useState(null);
   
   // Store items data
   const storeItems = [
@@ -20,8 +21,9 @@ function Store({ onBack, onOpenWallet }) {
       defense: 8,
       speed: 5,
       boost: '+15 Attack, +8 Defense, +5 Speed',
-      price: 1200,
-      description: 'Enchanted gloves that channel the power of fire. Perfect for close combat.'
+      price: 50,
+      description: 'Enchanted gloves that channel the power of fire. Perfect for close combat.',
+      nftUri:'bafkreihvdf2nofh3qsbqzwsuvvwjpo6wmeztam4uqadoxwzzymrfkdq35q'
     },
     { 
       id: 2, 
@@ -32,8 +34,9 @@ function Store({ onBack, onOpenWallet }) {
       defense: 3,
       speed: 12,
       boost: '+20 Attack, +3 Defense, +12 Speed',
-      price: 850,
-      description: 'A mystical blade forged in the frozen mountains. Deals ice damage.'
+      price: 50,
+      description: 'A mystical blade forged in the frozen mountains. Deals ice damage.',
+      nftUri:'bafkreiddqzzdulic4hjatzqv7w3esbqhrkibpgns44nbfpcoz52h23i2wu'
     },
     { 
       id: 3, 
@@ -44,8 +47,9 @@ function Store({ onBack, onOpenWallet }) {
       defense: 15,
       speed: 1,
       boost: '+2 Attack, +15 Defense, +1 Speed',
-      price: 500,
-      description: 'A sturdy shield that provides excellent protection against attacks.'
+      price: 50,
+      description: 'A sturdy shield that provides excellent protection against attacks.',
+      nftUri:'bafkreieydbxr4oq2zg5ua7ydiuejy5nxa56ti7zxjzm5fnaf3qphq47qle'
     },
     { 
       id: 4, 
@@ -56,14 +60,63 @@ function Store({ onBack, onOpenWallet }) {
       defense: 3,
       speed: 8,
       boost: '+3 Attack, +3 Defense, +8 Speed',
-      price: 300,
-      description: 'A magical charm that brings good fortune and increased agility.'
+      price: 30,
+      description: 'A magical charm that brings good fortune and increased agility.',
+      nftUri:'bafkreibhse243vcr7rm5oecl6izhjedhjfxvfghr3th6hjisuxmsc2t3bi'
     }
   ];
   
-  const handlePurchase = (item) => {
-    alert(`Purchased ${item.name} for ${item.price} coins!`);
-  };
+  const handlePurchase = async (item) => {
+  const playerAddress = window.ethereum.selectedAddress; // or pass as prop
+
+  if (!playerAddress) {
+    alert("Please connect your wallet first.");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:3000/claim-nft", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        playerAddress,
+        nftUri: `ipfs://${item.nftUri}`, // Customize this
+        requiredMoveTokens: item.price
+      })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      alert(`✅ ${item.name} claimed! TX: ${result.txHash}`);
+      // Optional: convert IPFS to HTTP link for fetching metadata
+  const metadataUrl = item.nftUri.startsWith("ipfs://")
+    ? item.nftUri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")
+    : item.nftUri;
+
+  // Fetch the actual metadata (name, image, description)
+  const metadata = await fetch(metadataUrl).then(res => res.json());
+
+  // Add the item to your local inventory state
+  setInventory(prev => [
+    ...prev,
+    {
+      tokenUri: item.nftUri,
+      metadata,
+      txHash: result.txHash
+    }
+  ]);
+    } else {
+      alert(`❌ Failed: ${result.error}`);
+    }
+
+  } catch (err) {
+    console.error("Claim Error:", err);
+    alert("Something went wrong!");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">

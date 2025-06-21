@@ -5,13 +5,23 @@ const { ethers } = require("ethers");
 const ABI = require("./MoveTokenABI.json");
 const cors = require("cors");
 
+// Load ABIs
+const NFTABI = require("./abi/NFTABI.json");
+
+const bodyParser = require("body-parser");
+
+
 const app = express();
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
+app.use(bodyParser.json());
 
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const contract = new ethers.Contract(process.env.TOKEN_ADDRESS, ABI, wallet);
+const nftContract=new ethers.Contract(process.env.NFT_CONTRACT_ADDRESS, NFTABI, wallet);
+
+
 
 // Transaction management
 const pendingTransactions = new Map(); // Track pending transactions
@@ -367,6 +377,35 @@ app.post("/admin/fund-backend", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+app.post("/claim-nft", async (req, res) => {
+  const { playerAddress, nftUri, requiredMoveTokens } = req.body;
+
+  if (!playerAddress || !nftUri || !requiredMoveTokens) {
+    return res.status(400).json({ error: "Player address, URI, and required MOVE amount are needed" });
+  }
+
+  try {
+    const decimals = await contract.decimals(); // use the actual decimals of MOVE token
+    const balance = await contract.balanceOf(playerAddress);
+    const required = ethers.parseUnits(requiredMoveTokens.toString(), decimals);
+
+    if (balance < required) {
+      return res.status(400).json({ error: "Not enough MOVE tokens" });
+    }
+
+    const tx = await nftContract.mintItem(playerAddress, nftUri);
+    await tx.wait();
+
+    res.json({ success: true, txHash: tx.hash });
+  } catch (error) {
+    console.error("❌ NFT Claim Error:", error); // Log full error
+    res.status(500).json({ error: error.message || "NFT claim failed" });
+  }
+});
+
+
 
 app.listen(process.env.PORT, () => {
   console.log(`Reward backend running on port ${process.env.PORT}`);
