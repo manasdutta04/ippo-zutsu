@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { ethers } from 'ethers';
 
 
 function Level1Challenge({ onBack }) {
@@ -12,6 +13,8 @@ function Level1Challenge({ onBack }) {
   const [showBattlePopup, setShowBattlePopup] = useState(false);
   const [showVictoryPopup, setShowVictoryPopup] = useState(false);
   const [playerWalletAddress, setPlayerWalletAddress] = useState(null);
+  const [isSubmittingReward, setIsSubmittingReward] = useState(false);
+  const [isClaimingReward, setIsClaimingReward] = useState(false);
   const movementTimeoutRef = useRef(null);
   const simulationIntervalRef = useRef(null);
   
@@ -260,34 +263,120 @@ useEffect(() => {
   };
 
   const handleLevelWin = async () => {
-  if (!playerWalletAddress) {
-    console.error("No wallet address available");
-    return;
-  }
-
-  try {
-    const response = await fetch("http://localhost:3000/reward", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        playerAddress: playerWalletAddress,
-        amount: 10
-      })
-    });
-
-    const result = await response.json();
-    if (response.ok) {
-      console.log("Reward sent successfully:", result);
-    } else {
-      console.error("Reward error:", result.error);
+    if (!playerWalletAddress) {
+      console.error("No wallet address available");
+      return;
     }
 
-  } catch (error) {
-    console.error("Network error:", error);
-  }
-};
+    if (isSubmittingReward) {
+      console.log("Reward submission already in progress");
+      return;
+    }
+
+    // Ensure wallet address is valid
+    if (!playerWalletAddress.startsWith('0x') || playerWalletAddress.length !== 42) {
+      console.error("Invalid wallet address format");
+      return;
+    }
+
+    setIsSubmittingReward(true);
+
+    // Create payload with the correct field name that backend expects
+    const payload = {
+      playerAddress: String(playerWalletAddress),
+      amount: Number(50)
+    };
+
+    console.log("Sending reward payload:", payload);
+
+    try {
+      // Step 1: Assign reward through backend
+      const response = await fetch("http://localhost:3000/reward", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse response as JSON:", e);
+        result = { error: "Invalid JSON response" };
+      }
+
+      if (!response.ok) {
+        if (response.status === 409 && result.code === "TRANSACTION_ALREADY_KNOWN") {
+          console.log("Transaction already submitted, treating as success");
+        } else {
+          console.error("Reward error:", result.error || "Unknown error");
+          console.error("Status code:", response.status);
+          console.error("Response headers:", Object.fromEntries([...response.headers]));
+          return;
+        }
+      } else {
+        console.log("Reward assigned successfully:", result);
+      }
+
+      // Step 2: Claim the reward using user's wallet
+      if (window.ethereum) {
+        console.log("Claiming reward...");
+        setIsClaimingReward(true);
+        
+        try {
+          console.log("Using imported ethers v6");
+
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          
+          console.log("Provider created, signer obtained");
+          
+          // Contract ABI for claimReward function
+          const contractABI = [
+            {
+              "inputs": [],
+              "name": "claimReward",
+              "outputs": [],
+              "stateMutability": "nonpayable",
+              "type": "function"
+            }
+          ];
+          
+          // Contract address from environment or hardcoded
+          const contractAddress = "0xa47bad07c591b55c83367a078f73261f17bb1ca6"; // Replace with actual contract address
+          const contract = new ethers.Contract(contractAddress, contractABI, signer);
+          
+          console.log("Contract created, calling claimReward...");
+          
+          const claimTx = await contract.claimReward();
+          console.log("Claim transaction sent:", claimTx.hash);
+          
+          await claimTx.wait();
+          console.log("Reward claimed successfully!");
+          alert("Tokens successfully claimed! Check your wallet balance.");
+        } catch (claimError) {
+          console.error("Error claiming reward:", claimError);
+          alert(`Error claiming reward: ${claimError.message}`);
+        } finally {
+          setIsClaimingReward(false);
+        }
+      } else {
+        console.error("MetaMask not detected");
+        alert("Please install MetaMask to claim your rewards!");
+      }
+
+    } catch (error) {
+      console.error("Network error:", error);
+    } finally {
+      setIsSubmittingReward(false);
+    }
+  };
 
 
   return (
@@ -374,15 +463,17 @@ useEffect(() => {
                 alt="Victory Avatar" 
                 className="h-40 object-contain"
               />
-              
             </div>
             
             <div className="bg-purple-800/50 rounded-lg p-4 mb-6">
-              <h3 className="text-white font-anime mb-2 text-center">Rewards Earned:</h3>
+              <h3 className="text-white font-anime mb-2 text-center">Rewards:</h3>
               <ul className="space-y-2">
                 <li className="flex items-center justify-center">
                   <span className="text-lg mr-2">🪙</span>
                   <span className="text-purple-200">50 Move Tokens</span>
+                  {isClaimingReward && (
+                    <span className="ml-2 text-yellow-300 text-sm">Claiming...</span>
+                  )}
                 </li>
                 
                 <li className="flex items-center justify-center">
@@ -390,14 +481,23 @@ useEffect(() => {
                   <span className="text-purple-200">Beginner Badge</span>
                 </li>
               </ul>
+              
+              {isClaimingReward && (
+                <div className="mt-3 text-center">
+                  <div className="text-yellow-300 text-sm">
+                    Please confirm the transaction in your wallet to claim your tokens!
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="flex justify-center">
               <button 
-                className="btn-primary py-2 px-8"
+                className={`btn-primary py-2 px-8 ${isClaimingReward ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={handleContinue}
+                disabled={isClaimingReward}
               >
-                Continue
+                {isClaimingReward ? 'Claiming Rewards...' : 'Continue'}
               </button>
             </div>
           </motion.div>
