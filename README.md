@@ -1,4 +1,4 @@
-# IPPO ZUTSU 🥊
+# IPPO ZUTSU 
 
 **Turn Your Steps Into Epic Adventures!**
 
@@ -19,14 +19,14 @@ IPPO ZUTSU is the world's first fitness RPG where your real-world movement becom
 - **Progressive Difficulty**: Each level increases step requirements and challenge complexity
 - **Boss Battle Integration**: Mid-challenge boss encounters that pause the game for epic battles
 
-### 🏪 **In-Game Store System**
+###  **In-Game Store System**
 - **Equipment Shop**: Purchase powerful gear including Fire Gloves, Ice Sword, Iron Shield, and Lucky Charm
 - **Rarity System**: Items have different rarity levels (Uncommon, Rare, Epic, Legendary)
 - **Stat Bonuses**: Each item provides specific attack, defense, and speed bonuses
 - **Detailed Item Info**: Complete descriptions and stat breakdowns for informed purchasing
 - **Coin-Based Economy**: Use earned coins to purchase upgrades and equipment
 
-### 🎒 **Inventory Management**
+###  **Inventory Management**
 - **Item Collection**: Store and manage all earned and purchased items
 - **Equipment System**: Separate weapon and armor slots for strategic loadouts
 - **Character Stats Display**: Real-time calculation of total attack, defense, and speed stats

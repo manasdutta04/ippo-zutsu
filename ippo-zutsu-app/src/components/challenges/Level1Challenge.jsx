@@ -20,6 +20,8 @@ function Level1Challenge({ onBack, onComplete }) {
   const [playerWalletAddress, setPlayerWalletAddress] = useState(null);
   const [isSubmittingReward, setIsSubmittingReward] = useState(false);
   const [isClaimingReward, setIsClaimingReward] = useState(false);
+  const [isSimulationMode, setIsSimulationMode] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ magnitude: 0, threshold: 1.2 });
   const movementTimeoutRef = useRef(null);
   const simulationIntervalRef = useRef(null);
   
@@ -44,19 +46,31 @@ useEffect(() => {
   // Request permission for Device Motion API
   const requestMotionPermission = async () => {
     try {
+      console.log('Requesting motion permission...'); // Debug log
+      
       // For iOS devices that require permission
       if (typeof DeviceMotionEvent !== 'undefined' && 
           typeof DeviceMotionEvent.requestPermission === 'function') {
+        console.log('iOS device detected, requesting explicit permission');
         const permissionState = await DeviceMotionEvent.requestPermission();
+        console.log('Permission state:', permissionState);
+        
         if (permissionState === 'granted') {
           setHasMotionPermission(true);
           setPermissionError(null);
+          console.log('Motion permission granted');
         } else {
-          setPermissionError('Motion permission denied');
+          setPermissionError('Motion permission denied. Please enable motion & orientation access in your browser settings.');
         }
       } else {
         // For devices that don't require explicit permission
-        setHasMotionPermission(true);
+        console.log('Non-iOS device, checking if DeviceMotionEvent is available');
+        if (typeof DeviceMotionEvent !== 'undefined') {
+          setHasMotionPermission(true);
+          console.log('DeviceMotionEvent available, permission granted');
+        } else {
+          setPermissionError('Device motion is not supported on this browser/device');
+        }
       }
     } catch (error) {
       setPermissionError(`Error requesting motion permission: ${error.message}`);
@@ -67,15 +81,17 @@ useEffect(() => {
 
 
 
-  // Simulation mode - automatically increase steps
+  // Simulation mode - only run if simulation mode is enabled
   useEffect(() => {
-    if (isRunning) {
+    if (isRunning && isSimulationMode) {
+      console.log('Starting simulation mode');
       setIsMoving(true);
       
       // Set up interval to increase steps
       simulationIntervalRef.current = setInterval(() => {
         setSteps(prevSteps => {
           const newSteps = prevSteps + 1;
+          console.log('Simulation step:', newSteps);
           
           // Check if the user has reached 30 steps to trigger the battle
           if (newSteps === 30 && !showBattlePopup) {
@@ -98,9 +114,9 @@ useEffect(() => {
         });
       }, 500); // Add a step every 500ms
     } else {
-      setIsMoving(false);
       if (simulationIntervalRef.current) {
         clearInterval(simulationIntervalRef.current);
+        console.log('Simulation mode stopped');
       }
     }
     
@@ -109,21 +125,30 @@ useEffect(() => {
         clearInterval(simulationIntervalRef.current);
       }
     };
-  }, [isRunning, showBattlePopup, targetSteps]);
+  }, [isRunning, isSimulationMode, showBattlePopup, targetSteps]);
 
-  // Set up device motion event listener - keeping this for real device usage
+  // Set up device motion event listener for real device usage
   useEffect(() => {
-    if (!isRunning || !hasMotionPermission) return;
+    if (!isRunning || !hasMotionPermission || isSimulationMode) return;
+    
+    console.log('Setting up device motion listener');
     
     const handleMotion = (event) => {
       const { acceleration } = event;
-      if (!acceleration || acceleration.x === null) return; // Some browsers may not provide acceleration
+      
+      // Try accelerationIncludingGravity if acceleration is not available
+      const accel = acceleration || event.accelerationIncludingGravity;
+      
+      if (!accel || accel.x === null) {
+        console.log('No acceleration data available');
+        return;
+      }
       
       // Store current acceleration
       accelerationRef.current = {
-        x: acceleration.x || 0,
-        y: acceleration.y || 0,
-        z: acceleration.z || 0
+        x: accel.x || 0,
+        y: accel.y || 0,
+        z: accel.z || 0
       };
       
       // Calculate magnitude of acceleration
@@ -133,8 +158,11 @@ useEffect(() => {
         Math.pow(accelerationRef.current.z, 2)
       );
       
+      // Update debug info
+      setDebugInfo(prev => ({ ...prev, magnitude: magnitude.toFixed(2) }));
+      
       // Detect significant movement to switch avatar
-      if (magnitude > 0.8) { // Lower threshold for movement detection
+      if (magnitude > 0.5) { // Lower threshold for movement detection
         setIsMoving(true);
         
         // Clear any existing timeout
@@ -148,29 +176,36 @@ useEffect(() => {
         }, 2000);
       }
       
-      // Step detection algorithm
+      // Improved step detection algorithm
       if (!stepCooldownRef.current) {
+        // Detect when acceleration crosses threshold (upward)
         if (magnitude > stepThresholdRef.current && !peakDetectedRef.current) {
           peakDetectedRef.current = true;
+          console.log('Peak detected, magnitude:', magnitude);
         }
         
-        if (peakDetectedRef.current && magnitude < lastMagnitudeRef.current) {
-          // A step is detected when we've seen a peak and now the magnitude is decreasing
+        // Detect when acceleration drops significantly after peak (downward)
+        if (peakDetectedRef.current && magnitude < (lastMagnitudeRef.current * 0.7)) {
+          console.log('Step detected! Magnitude drop from', lastMagnitudeRef.current, 'to', magnitude);
+          
+          // A step is detected
           setSteps(prevSteps => {
             const newSteps = prevSteps + 1;
+            console.log('New step count:', newSteps);
             
             // Check if the user has reached 30 steps to trigger the battle
             if (newSteps === 30 && !showBattlePopup) {
-              setIsRunning(false); // Pause the challenge
+              setIsRunning(false);
               setShowBattlePopup(true);
               return newSteps;
             }
             
             // Check if the user has reached 50 steps to trigger victory
             if (newSteps >= targetSteps) {
-              setIsRunning(false); // Pause the challenge
+              setIsRunning(false);
               setShowVictoryPopup(true);
-              return targetSteps; // Cap at target steps
+              handleLevelWin();
+              return targetSteps;
             }
             
             return newSteps;
@@ -181,7 +216,7 @@ useEffect(() => {
           stepCooldownRef.current = true;
           setTimeout(() => {
             stepCooldownRef.current = false;
-          }, 300); // 300ms cooldown between steps
+          }, 600); // Longer cooldown between steps
         }
       }
       
@@ -189,14 +224,16 @@ useEffect(() => {
     };
     
     window.addEventListener('devicemotion', handleMotion);
+    console.log('Device motion listener added');
     
     return () => {
       window.removeEventListener('devicemotion', handleMotion);
+      console.log('Device motion listener removed');
       if (movementTimeoutRef.current) {
         clearTimeout(movementTimeoutRef.current);
       }
     };
-  }, [isRunning, hasMotionPermission, showBattlePopup, targetSteps]);
+  }, [isRunning, hasMotionPermission, isSimulationMode, showBattlePopup, targetSteps]);
 
   // Reset isMoving when stopping
   useEffect(() => {
@@ -717,15 +754,65 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* Debug Info */}
+        {!hasMotionPermission && (
+          <div className="bg-yellow-900/50 text-yellow-200 p-3 rounded-lg mb-4 text-xs sm:text-sm text-center">
+            <button 
+              className="btn-primary text-xs py-1 px-3 mb-2"
+              onClick={requestMotionPermission}
+            >
+              Enable Motion Detection
+            </button>
+            <p>Enable motion sensors to detect real steps</p>
+          </div>
+        )}
+
+        {/* Mode Toggle */}
+        <div className="flex justify-center mb-4 space-x-4">
+          <button 
+            className={`px-4 py-2 rounded text-sm ${!isSimulationMode ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'}`}
+            onClick={() => setIsSimulationMode(false)}
+          >
+            Real Steps
+          </button>
+          <button 
+            className={`px-4 py-2 rounded text-sm ${isSimulationMode ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300'}`}
+            onClick={() => setIsSimulationMode(true)}
+          >
+            Demo Mode
+          </button>
+        </div>
+
+        {/* Debug Information */}
+        {!isSimulationMode && hasMotionPermission && (
+          <div className="bg-blue-900/30 rounded-lg p-3 mb-4 text-xs">
+            <div className="text-center text-blue-200">
+              <div>Motion: {debugInfo.magnitude}</div>
+              <div>Threshold: {debugInfo.threshold}</div>
+              <div>Mode: {isSimulationMode ? 'Demo' : 'Real Motion'}</div>
+            </div>
+          </div>
+        )}
+
         {/* Start/Pause Button */}
         <div className="flex justify-center mb-4 sm:mb-6">
           <button 
             className={`btn-${isRunning ? 'secondary' : 'primary'} py-2 px-6 sm:px-8 text-sm sm:text-base`}
             onClick={() => setIsRunning(!isRunning)}
+            disabled={!isSimulationMode && !hasMotionPermission}
           >
             {isRunning ? 'Pause' : 'Start'}
           </button>
         </div>
+
+        {/* Instructions */}
+        {!isSimulationMode && hasMotionPermission && (
+          <div className="bg-purple-800/30 rounded-lg p-3 mb-4 text-center">
+            <p className="text-purple-200 text-xs sm:text-sm">
+              📱 Hold your device and walk around to count real steps!
+            </p>
+          </div>
+        )}
 
         {/* Rewards */}
         <div className="bg-purple-800/50 rounded-lg p-3 sm:p-4">
