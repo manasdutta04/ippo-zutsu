@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { rewardPlayer } from '../../web3/rewardPlayer';
+
 
 function Level1Challenge({ onBack }) {
   const [steps, setSteps] = useState(0);
@@ -11,8 +11,20 @@ function Level1Challenge({ onBack }) {
   const [isMoving, setIsMoving] = useState(false);
   const [showBattlePopup, setShowBattlePopup] = useState(false);
   const [showVictoryPopup, setShowVictoryPopup] = useState(false);
+  const [playerWalletAddress, setPlayerWalletAddress] = useState(null);
   const movementTimeoutRef = useRef(null);
   const simulationIntervalRef = useRef(null);
+  
+
+useEffect(() => {
+  async function getAddress() {
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      setPlayerWalletAddress(accounts[0]);
+    }
+  }
+  getAddress();
+}, []);
   
   // Refs for step detection algorithm
   const accelerationRef = useRef({ x: 0, y: 0, z: 0 });
@@ -20,16 +32,6 @@ function Level1Challenge({ onBack }) {
   const peakDetectedRef = useRef(false);
   const stepThresholdRef = useRef(1.2); // Adjust based on testing
   const stepCooldownRef = useRef(false);
-
-  const handleLevelComplete = async () => {
-  try {
-    const rewardAmount = 10; // Amount of MOVE tokens to reward
-    await rewardPlayer(walletAddress, rewardAmount);
-    alert('Player rewarded with MOVE tokens!');
-  } catch (error) {
-    alert('Failed to send reward: ' + error.message);
-  }
-};
 
   // Request permission for Device Motion API
   const requestMotionPermission = async () => {
@@ -54,6 +56,9 @@ function Level1Challenge({ onBack }) {
     }
   };
 
+
+
+
   // Simulation mode - automatically increase steps
   useEffect(() => {
     if (isRunning) {
@@ -77,6 +82,7 @@ function Level1Challenge({ onBack }) {
             setIsRunning(false); // Pause the challenge
             setShowVictoryPopup(true);
             clearInterval(simulationIntervalRef.current);
+            handleLevelWin();
             return targetSteps; // Cap at target steps
           }
           
@@ -253,6 +259,37 @@ function Level1Challenge({ onBack }) {
     onBack();
   };
 
+  const handleLevelWin = async () => {
+  if (!playerWalletAddress) {
+    console.error("No wallet address available");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:3000/reward", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        playerAddress: playerWalletAddress,
+        amount: 10
+      })
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      console.log("Reward sent successfully:", result);
+    } else {
+      console.error("Reward error:", result.error);
+    }
+
+  } catch (error) {
+    console.error("Network error:", error);
+  }
+};
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4">
       {/* Header */}
@@ -337,6 +374,7 @@ function Level1Challenge({ onBack }) {
                 alt="Victory Avatar" 
                 className="h-40 object-contain"
               />
+              
             </div>
             
             <div className="bg-purple-800/50 rounded-lg p-4 mb-6">

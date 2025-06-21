@@ -1,7 +1,7 @@
 import { Contract, formatUnits } from "ethers";
 
 // Replace with your real contract address
-const MOVE_TOKEN_ADDRESS = "0x0DdC4C56F6F26711A013e273b4AbFB3d89723308"; 
+const MOVE_TOKEN_ADDRESS = import.meta.env.VITE_CONTACTADDR; 
 const MOVE_TOKEN_ABI = [
   "function balanceOf(address) view returns (uint256)",
   "function decimals() view returns (uint8)"
